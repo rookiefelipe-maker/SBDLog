@@ -1502,7 +1502,10 @@ function finishSession() {
   let drafts = LS.get('mx_draft_sess') || {};
   if(activeSession.id) delete drafts[activeSession.id];
   LS.set('mx_draft_sess', drafts);
-  
+
+  // Auto-backup: download a JSON copy when the session finishes
+  exportData();
+
   // Clear persisted active session
   clearActiveSession();
   activeSession = null;
