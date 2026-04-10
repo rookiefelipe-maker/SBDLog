@@ -267,6 +267,7 @@ if ('serviceWorker' in navigator) {
     </div>
     <div style="display:flex;align-items:center;gap:10px;">
       <div class="header-date" id="hdate"></div>
+      <button class="gear-btn" id="refreshBtn" onclick="clickFeedback(); loadLatestBackup()" title="Load latest backup">↺</button>
       <button class="gear-btn" onclick="clickFeedback(); openModal('mSettings')" title="Settings">⚙</button>
     </div>
   </div>
@@ -446,6 +447,17 @@ if ('serviceWorker' in navigator) {
   <div class="modal">
     <div class="mhandle"></div>
     <div class="mtitle">Settings</div>
+    <div class="settings-row" style="flex-direction:column;align-items:flex-start;gap:8px;">
+      <div>
+        <div class="settings-label">Backup folder</div>
+        <div class="settings-sub">Folder name where backups are saved (for the ↺ button)</div>
+      </div>
+      <div style="display:flex;gap:8px;width:100%;align-items:center;">
+        <input type="text" class="confirm-inp" id="backupFolderInp" placeholder="e.g. Downloads" style="margin-top:0;flex:1;">
+        <button class="btn btn-ghost btn-sm" onclick="clickFeedback(); saveBackupFolder()">Save</button>
+      </div>
+      <div id="backupFolderStatus" style="font-size:12px;color:var(--text3);"></div>
+    </div>
     <div class="settings-row">
       <div>
         <div class="settings-label">Export data</div>
@@ -2059,7 +2071,92 @@ function renderFreq(sessions) {
   }
 }
 
-// ── INIT ──────────────────────────────────────────────────────
+// ── BACKUP FOLDER + LOAD LATEST ──────────────────────────────
+function saveBackupFolder() {
+  const inp = document.getElementById('backupFolderInp');
+  const val = inp ? inp.value.trim() : '';
+  LS.set('mx_backup_folder', val);
+  const status = document.getElementById('backupFolderStatus');
+  if (status) {
+    status.textContent = val ? `Saved: "${val}"` : 'Cleared.';
+    setTimeout(() => { status.textContent = ''; }, 2000);
+  }
+}
+
+function loadLatestBackup() {
+  const btn = document.getElementById('refreshBtn');
+
+  // Use File System Access API (supported in Chrome/Edge on Android and desktop)
+  if (!window.showOpenFilePicker) {
+    // Fallback: open a file picker filtered to JSON
+    const inp = document.createElement('input');
+    inp.type = 'file';
+    inp.accept = '.json';
+    inp.onchange = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = ev => {
+        try {
+          const data = JSON.parse(ev.target.result);
+          if (data.oneRMs) save1RMData(data.oneRMs);
+          if (data.templates) saveTplData(data.templates);
+          if (data.sessions) saveSessData(data.sessions);
+          if (data.customEx) saveExData(data.customEx);
+          if (data.goals) LS.set('mx_goals', data.goals);
+          renderAll();
+          if (btn) { btn.textContent = '✓'; setTimeout(() => { btn.textContent = '↺'; }, 1500); }
+        } catch(err) {
+          alert('Invalid backup file.');
+        }
+      };
+      reader.readAsText(file);
+    };
+    inp.click();
+    return;
+  }
+
+  // Modern File System Access API path
+  const pickerOpts = {
+    types: [{ description: 'JSON Backup', accept: { 'application/json': ['.json'] } }],
+    multiple: false,
+  };
+
+  // Try to start in the saved folder name (hint only — browsers may ignore it)
+  const savedFolder = LS.get('mx_backup_folder') || '';
+  if (savedFolder) pickerOpts.suggestedName = savedFolder;
+
+  window.showOpenFilePicker(pickerOpts).then(async ([fileHandle]) => {
+    const file = await fileHandle.getFile();
+    const text = await file.text();
+    try {
+      const data = JSON.parse(text);
+      if (data.oneRMs) save1RMData(data.oneRMs);
+      if (data.templates) saveTplData(data.templates);
+      if (data.sessions) saveSessData(data.sessions);
+      if (data.customEx) saveExData(data.customEx);
+      if (data.goals) LS.set('mx_goals', data.goals);
+      renderAll();
+      if (btn) { btn.textContent = '✓'; setTimeout(() => { btn.textContent = '↺'; }, 1500); }
+    } catch(err) {
+      alert('Invalid backup file.');
+    }
+  }).catch(() => {
+    // User cancelled — do nothing
+  });
+}
+
+// Pre-fill backup folder input when settings modal opens
+const _origOpenModal = openModal;
+openModal = function(id) {
+  _origOpenModal(id);
+  if (id === 'mSettings') {
+    const inp = document.getElementById('backupFolderInp');
+    if (inp) inp.value = LS.get('mx_backup_folder') || '';
+  }
+};
+
+
 // Hydrate activeSession from localStorage on load
 (function() {
   const saved = loadActiveSession();
