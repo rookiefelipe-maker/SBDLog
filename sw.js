@@ -1,4 +1,4 @@
-const CACHE = 'sbdlog-v3';
+const CACHE = 'sbdlog-v4';
 const ASSETS = ['./', './index.html', './icon-192.png', './icon-512.png', './manifest.json', './tmp_script.js'];
 
 self.addEventListener('install', e => {
