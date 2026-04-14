@@ -1,4 +1,4 @@
-const CACHE = 'sbdlog-v4';
+const CACHE = 'sbdlog-v5';
 const ASSETS = ['./', './index.html', './icon-192.png', './icon-512.png', './manifest.json', './tmp_script.js'];
 
 self.addEventListener('install', e => {
@@ -19,12 +19,8 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   e.respondWith(
-    fetch(e.request)
-      .then(res => res)
-      .catch(() => {
-        return caches.match(e.request).then(cached => {
-          return cached || caches.match('./index.html');
-        });
-      })
+    caches.match(e.request).then(cached => {
+      return cached || fetch(e.request).catch(() => caches.match('./index.html'));
+    })
   );
 });
