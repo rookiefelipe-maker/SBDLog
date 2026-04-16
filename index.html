@@ -236,8 +236,10 @@ html,body{height:100%;background:var(--bg0);color:var(--text1);font-family:'DM S
 .rest-timer-btn:active{background:var(--bg5);}
 .rest-timer-edit{background:var(--bg4);border:1px solid var(--bg5);border-radius:6px;color:var(--text1);font-family:'DM Sans',sans-serif;font-size:14px;padding:6px 8px;width:52px;text-align:center;outline:none;}
 /* SROW VERSION D: # is RPE indicator, X stays alone */
-.srow-d{display:grid;grid-template-columns:28px 1fr 1fr 46px 22px;gap:6px;align-items:center;}
-.col-labels-d{display:grid;grid-template-columns:28px 1fr 1fr 46px 22px;gap:6px;padding:0 14px;margin-bottom:2px;}
+.srow-d{display:grid;grid-template-columns:28px 1fr 1fr 46px 28px 22px;gap:6px;align-items:center;}
+.col-labels-d{display:grid;grid-template-columns:28px 1fr 1fr 46px 28px 22px;gap:6px;padding:0 14px;margin-bottom:2px;}
+/* Per-weight PR reps indicator */
+.spr{font-size:12px;color:var(--text3);text-align:center;font-variant-numeric:tabular-nums;font-weight:600;line-height:1;}
 /* RPE number badge */
 .sn-rpe{width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;cursor:pointer;transition:background .15s,color .15s;background:var(--bg3);color:var(--text3);border:none;font-family:'DM Sans',sans-serif;-webkit-tap-highlight-color:transparent;}
 .sn-rpe:active{opacity:.7;}
@@ -1292,6 +1294,7 @@ function renderActiveSession() {
         <div class="col-label">kg</div>
         <div class="col-label">reps</div>
         <div class="col-label">e1RM</div>
+        <div class="col-label">PR</div>
         <div class="col-label"></div>
       </div>
       <div class="sets-area" id="sets-ex-${ei}">
@@ -1347,6 +1350,11 @@ function buildSetRow(ei, si, weight='', reps='', rpe='') {
   const est = showEst ? e1rm(parseFloat(weight), parseInt(reps))+'kg' : (isTopSet?'—':'');
   const rpeClass = rpe ? `rpe-${rpe}` : '';
   const rpeLabel = rpe==='easy'?'🟢':rpe==='medium'?'🟡':rpe==='hard'?'🔴':`${si+1}`;
+  // Look up best reps ever done at this weight for this exercise
+  const {sessions} = getData();
+  const exName = ex ? ex.name : '';
+  const prReps = exName && weight ? getBestRepsForWeight(exName, weight, sessions) : null;
+  const prRepsHtml = prReps ? `<div class="spr" id="spr-${ei}-${si}" title="Tu PR con este peso">×${prReps}</div>` : `<div class="spr" id="spr-${ei}-${si}"></div>`;
   return `<div class="srow-d" data-ei="${ei}" data-si="${si}">
     <button class="sn-rpe ${rpeClass}" onclick="cycleRpe(this,${ei},${si})" title="Tap to rate">${rpeLabel}</button>
     <input type="number" class="sinp w-inp" value="${weight}" placeholder="0" min="0" step="0.5" inputmode="decimal"
@@ -1354,6 +1362,7 @@ function buildSetRow(ei, si, weight='', reps='', rpe='') {
     <input type="number" class="sinp r-inp" value="${reps}" placeholder="0" min="1" step="1" inputmode="numeric"
       oninput="liveEst(this,${ei},${si})">
     <div class="sest" id="est-${ei}-${si}">${est}</div>
+    ${prRepsHtml}
     <button class="sdel" onclick="clickFeedback(); removeSessSet(${ei},${si})">✕</button>
   </div>`;
 }
@@ -1433,6 +1442,14 @@ function liveEst(inp, ei, si) {
   const el = document.getElementById(`est-${ei}-${si}`);
   const isTopSet = activeSession && activeSession.exercises[ei] && activeSession.exercises[ei].topSet;
   if(el){if(isTopSet) el.textContent=(w>0&&r>0)?e1rm(w,r)+'kg':'—'; else el.textContent='';}
+  // Update per-weight PR indicator
+  const sprEl = document.getElementById(`spr-${ei}-${si}`);
+  if(sprEl && activeSession && activeSession.exercises[ei]) {
+    const exName = activeSession.exercises[ei].name;
+    const {sessions} = getData();
+    const prReps = (exName && w > 0) ? getBestRepsForWeight(exName, w, sessions) : null;
+    sprEl.textContent = prReps ? `×${prReps}` : '';
+  }
   // Live-update the in-memory set value so it gets persisted correctly
   if(activeSession && activeSession.exercises[ei] && activeSession.exercises[ei].sets[si] !== undefined) {
     const setObj = activeSession.exercises[ei].sets[si];
@@ -1794,6 +1811,23 @@ function getBestSetForExercise(exName, sessions) {
     });
   });
   return best;
+}
+
+// Returns the best reps ever done at a specific weight for an exercise
+function getBestRepsForWeight(exName, weight, sessions) {
+  if(!weight || parseFloat(weight) <= 0) return null;
+  const w = parseFloat(weight);
+  let bestReps = 0;
+  sessions.forEach(s => {
+    s.exercises.filter(e => e.name === exName).forEach(ex => {
+      ex.sets.forEach(st => {
+        const sw = parseFloat(st.weight) || 0;
+        const sr = parseInt(st.reps) || 0;
+        if(Math.abs(sw - w) < 0.01 && sr > bestReps) bestReps = sr;
+      });
+    });
+  });
+  return bestReps > 0 ? bestReps : null;
 }
 
 function getPRs(sessions) {
