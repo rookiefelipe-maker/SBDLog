@@ -444,6 +444,21 @@ if ('serviceWorker' in navigator) {
   </div>
 </div>
 
+<!-- MODAL: Edit Exercise in Session -->
+<div class="moverlay" id="mEditExercise">
+  <div class="modal">
+    <div class="mhandle"></div>
+    <div class="mtitle" id="mEditExTitle">Edit Exercise</div>
+    <div class="fg"><div class="flabel">Series</div><input type="number" class="finp" id="editExSets" placeholder="3" min="1" max="10" step="1" inputmode="numeric"></div>
+    <div class="fg"><div class="flabel">Reps</div><input type="number" class="finp" id="editExReps" placeholder="8" min="1" max="30" step="1" inputmode="numeric"></div>
+    <div class="fg"><div class="flabel">Peso (kg)</div><input type="text" class="finp" id="editExWeight" placeholder="60"></div>
+    <div class="mactions">
+      <button class="btn btn-ghost btn-sm" style="flex:1" onclick="clickFeedback(); closeModal('mEditExercise')">Cancel</button>
+      <button class="btn btn-sm" style="flex:2" onclick="clickFeedback(); saveExerciseEdit()">Save</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL: Settings -->
 <div class="moverlay" id="mSettings">
   <div class="modal">
@@ -936,7 +951,7 @@ function clickTplPicker(id, val) {
   hideTplPicker(id);
 }
 
-function addTplEx(val='', isTopSet=false) {
+function addTplEx(val='', isTopSet=false, defaultSets=3, defaultReps=8, defaultWeight='') {
   tplExCount++;
   const id = tplExCount;
   const div = document.createElement('div');
@@ -956,6 +971,11 @@ function addTplEx(val='', isTopSet=false) {
             onfocus="renderAcDropdown(${id})"
             style="font-size:14px;padding:12px 14px;">
           <div class="tpl-picker-panel tpl-ac-dropdown" id="tplAcDrop${id}" style="display:none;max-height:200px;overflow-y:auto;position:relative;z-index:10;"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:6px;">
+          <div><label style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Series</label><input type="number" class="finp tpl-sets-inp" value="${defaultSets}" min="1" max="10" style="font-size:13px;padding:8px 10px;"></div>
+          <div><label style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Reps</label><input type="number" class="finp tpl-reps-inp" value="${defaultReps}" min="1" max="30" style="font-size:13px;padding:8px 10px;"></div>
+          <div><label style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Peso (kg)</label><input type="text" class="finp tpl-weight-inp" value="${defaultWeight}" placeholder="ej. 60" style="font-size:13px;padding:8px 10px;"></div>
         </div>
         <div class="topset-toggle">
           <label class="toggle-wrap">
@@ -1038,9 +1058,18 @@ function saveTpl() {
   const exercises = [...document.querySelectorAll('.ex-editor')].map(block => {
     const inp = block.querySelector('.tpl-ac-input');
     const chk = block.querySelector('.tpl-topset-chk');
+    const setsInp = block.querySelector('.tpl-sets-inp');
+    const repsInp = block.querySelector('.tpl-reps-inp');
+    const weightInp = block.querySelector('.tpl-weight-inp');
     const exName = inp ? inp.value.trim() : '';
     if(!exName) return null;
-    return {name: exName, topSet: chk?chk.checked:false};
+    return {
+      name: exName,
+      topSet: chk?chk.checked:false,
+      defaultSets: parseInt(setsInp?.value) || 3,
+      defaultReps: parseInt(repsInp?.value) || 8,
+      defaultWeight: weightInp?.value.trim() || ''
+    };
   }).filter(Boolean);
   if(!exercises.length) return;
   let {templates} = getData();
@@ -1077,7 +1106,16 @@ function renderTpl() {
         </div>
       </div>
       <div class="tpl-exlist">
-        ${t.exercises.map(e=>{const n=typeof e==='object'?e.name:e;const ts=typeof e==='object'&&e.topSet;return `<div class="tpl-ex">· ${n}${ts?'<span class="topset-badge">TOP</span>':''}</div>`;}).join('')}
+        ${t.exercises.map(e=>{
+          const n = typeof e==='object' ? e.name : e;
+          const ts = typeof e==='object' && e.topSet;
+          const sets = typeof e==='object' && e.defaultSets ? e.defaultSets : 3;
+          const reps = typeof e==='object' && e.defaultReps ? e.defaultReps : 8;
+          const weight = typeof e==='object' && e.defaultWeight ? e.defaultWeight : '';
+          let info = `${sets}×${reps}`;
+          if(weight) info += ` @ ${weight}kg`;
+          return `<div class="tpl-ex">· ${n} <span style="color:var(--text3);font-size:12px;">${info}</span>${ts?'<span class="topset-badge">TOP</span>':''}`;
+        }).join('')}
       </div>`;
     list.appendChild(div);
   });
@@ -1092,7 +1130,14 @@ function editTpl(id) {
   document.getElementById('mTplName').value = t.name;
   document.getElementById('mTplExList').innerHTML = '';
   tplExCount = 0;
-  t.exercises.forEach(e => { if(typeof e==='object') addTplEx(e.name, e.topSet||false); else addTplEx(e, false); });
+  t.exercises.forEach(e => {
+    const name = typeof e==='object' ? e.name : e;
+    const topSet = typeof e==='object' ? (e.topSet||false) : false;
+    const defaultSets = typeof e==='object' ? (e.defaultSets||3) : 3;
+    const defaultReps = typeof e==='object' ? (e.defaultReps||8) : 8;
+    const defaultWeight = typeof e==='object' ? (e.defaultWeight||'') : '';
+    addTplEx(name, topSet, defaultSets, defaultReps, defaultWeight);
+  });
   openModal('mTpl');
 }
 
@@ -1232,13 +1277,31 @@ function startSession(tplId) {
     exercises: tpl.exercises.map(exObj => {
       const name = typeof exObj==='object' ? exObj.name : exObj;
       const topSet = typeof exObj==='object' ? (exObj.topSet||false) : false;
+      const defaultSets = typeof exObj==='object' ? (exObj.defaultSets||3) : 3;
+      const defaultReps = typeof exObj==='object' ? (exObj.defaultReps||8) : 8;
+      const defaultWeight = typeof exObj==='object' ? (exObj.defaultWeight||'') : '';
+      
       let lastSets = null;
       if(lastSess) {
         const prevEx = lastSess.exercises.find(e=>e.name===name);
         if(prevEx && prevEx.sets.length) lastSets = prevEx.sets;
       }
       const histPR = getBestSetForExercise(name, sessions);
-      return { name, topSet, sets: [], lastSets, histPR, superset: null, supersetName: null };
+      
+      // Generar sets por defecto basados en defaultSets, defaultReps y defaultWeight
+      let sets = [];
+      if(defaultSets > 0) {
+        for(let i = 0; i < defaultSets; i++) {
+          sets.push({
+            reps: defaultReps.toString(),
+            weight: defaultWeight,
+            rpe: '',
+            notes: ''
+          });
+        }
+      }
+      
+      return { name, topSet, sets, lastSets, histPR, superset: null, supersetName: null };
     })
   };
   sessSetCount = 0;
@@ -1282,6 +1345,7 @@ function renderActiveSession() {
           <div class="ex-block-name">${ex.name}${ex.topSet?'<span class="topset-badge">TOP</span>':''}</div>
         </div>
         <div style="display:flex;gap:6px;align-items:center;">
+          <button class="icon-btn" onclick="clickFeedback(); openEditExerciseModal(${ei})" title="Edit sets">⚙️</button>
           <button class="icon-btn" onclick="clickFeedback(); startSupersetSelection(${ei})" title="Create superset">⛓️</button>
           <button class="icon-btn" onclick="clickFeedback(); removeSessExercise(${ei})" title="Delete">✕</button>
         </div>
@@ -1433,6 +1497,54 @@ function saveRestTimerEdit() {
   }
   
   closeModal('mRestTimer');
+}
+
+// Variables globales para edición de ejercicio
+let editingExIndex = null;
+
+function openEditExerciseModal(exIndex) {
+  if(!activeSession || !activeSession.exercises[exIndex]) return;
+  
+  const ex = activeSession.exercises[exIndex];
+  editingExIndex = exIndex;
+  
+  // Calcular series, reps y peso del primer set (o usar defaults)
+  const firstSet = ex.sets && ex.sets.length > 0 ? ex.sets[0] : {};
+  const totalSets = ex.sets ? ex.sets.length : 3;
+  const reps = parseInt(firstSet.reps) || 8;
+  const weight = firstSet.weight || '';
+  
+  document.getElementById('mEditExTitle').textContent = `Edit ${ex.name}`;
+  document.getElementById('editExSets').value = totalSets;
+  document.getElementById('editExReps').value = reps;
+  document.getElementById('editExWeight').value = weight;
+  
+  openModal('mEditExercise');
+}
+
+function saveExerciseEdit() {
+  if(!activeSession || editingExIndex === null) return;
+  
+  const ex = activeSession.exercises[editingExIndex];
+  const newSets = parseInt(document.getElementById('editExSets').value) || 3;
+  const newReps = parseInt(document.getElementById('editExReps').value) || 8;
+  const newWeight = document.getElementById('editExWeight').value.trim();
+  
+  // Regenerar los sets con los nuevos valores
+  ex.sets = [];
+  for(let i = 0; i < newSets; i++) {
+    ex.sets.push({
+      reps: newReps.toString(),
+      weight: newWeight,
+      rpe: '',
+      notes: ''
+    });
+  }
+  
+  saveActiveSession();
+  renderActiveSession();
+  closeModal('mEditExercise');
+  editingExIndex = null;
 }
 
 function liveEst(inp, ei, si) {
