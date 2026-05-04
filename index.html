@@ -2517,10 +2517,14 @@ function renderBlocks() {
   }
   sel.innerHTML = blocks.map(b => {
     const isActive = b.id === active;
-    return `<div style="display:flex;align-items:center;gap:4px;">
-      <button class="block-btn${isActive ? ' active' : ''}" onclick="clickFeedback(); setActiveBlock('${b.id}'); renderBlocks();">${b.name}${isActive ? ' <span style='font-size:9px;'>●</span>' : ''}</button>
-      <button class="icon-btn" style="width:24px;height:24px;font-size:11px;" onclick="clickFeedback(); deleteBlock('${b.id}')">✕</button>
-    </div>`;
+    const activeDot = isActive ? ' <span style="font-size:9px;">●</span>' : '';
+    const activeClass = isActive ? ' active' : '';
+    const bid = b.id;
+    const bname = b.name;
+    return '<div style="display:flex;align-items:center;gap:4px;">'
+      + '<button class="block-btn' + activeClass + '" onclick="clickFeedback(); setActiveBlock(\'' + bid + '\'); renderBlocks();">' + bname + activeDot + '</button>'
+      + '<button class="icon-btn" style="width:24px;height:24px;font-size:11px;" onclick="clickFeedback(); deleteBlock(\'' + bid + '\')">&#x2715;</button>'
+      + '</div>';
   }).join('');
 }
 
