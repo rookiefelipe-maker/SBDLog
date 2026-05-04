@@ -205,6 +205,17 @@ html,body{height:100%;background:var(--bg0);color:var(--text1);font-family:'DM S
 .fday{width:16px;height:16px;border-radius:3px;background:var(--bg3);}
 .fday.on{background:#cc2222;}
 .fday.today{outline:1.5px solid var(--text3);outline-offset:1px;}
+/* TRAINING BLOCKS */
+.block-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(204,34,34,0.12);border:1px solid rgba(204,34,34,0.3);border-radius:6px;padding:3px 8px;font-size:11px;font-weight:700;letter-spacing:1.2px;color:#cc2222;text-transform:uppercase;}
+.block-selector{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:4px;}
+.block-btn{background:var(--bg3);border:1px solid var(--bg4);border-radius:8px;color:var(--text3);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;padding:7px 12px;cursor:pointer;transition:all .15s;}
+.block-btn.active{background:rgba(204,34,34,0.15);border-color:rgba(204,34,34,0.5);color:#cc2222;}
+.block-btn:active{opacity:.7;}
+/* GOAL TOTAL */
+.goal-total-row{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;border-top:1px solid var(--bg3);}
+.goal-total-label{font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;font-weight:600;}
+.goal-total-val{font-family:'Bebas Neue',sans-serif;font-size:28px;line-height:1;color:var(--text3);}
+.goal-total-missing{font-family:'Bebas Neue',sans-serif;font-size:20px;color:#cc2222;line-height:1;}
 /* SETTINGS */
 .settings-row{display:flex;justify-content:space-between;align-items:center;padding:16px 0;border-bottom:1px solid var(--bg3);gap:10px;flex-wrap:wrap;}
 .settings-row:last-child{border-bottom:none;}
@@ -292,7 +303,23 @@ if ('serviceWorker' in navigator) {
             <div class="total-unit" id="totalUnit"></div>
           </div>
         </div>
+        <div id="liftGoalsRow" style="display:none;border-top:1px solid var(--bg3);"></div>
+        <div class="goal-total-row" id="goalTotalRow" style="display:none;">
+          <div>
+            <div class="goal-total-label">Total goal</div>
+            <div class="goal-total-val" id="goalTotalVal">—</div>
+          </div>
+          <div style="text-align:right;">
+            <div class="goal-total-label">Falta</div>
+            <div class="goal-total-missing" id="goalTotalMissing">—</div>
+          </div>
+          <button class="icon-btn" onclick="clickFeedback(); openGoalModal()" style="margin-left:8px;" title="Edit goal">✏️</button>
+        </div>
+        <div style="padding:10px 16px 14px;display:flex;align-items:center;gap:8px;" id="goalTotalSetRow">
+          <button class="btn-dashed" style="flex:1;" onclick="clickFeedback(); openGoalModal()">+ Set goals</button>
+        </div>
       </div>
+
       <div class="slabel">This week's max</div>
       <div id="weeklyRows" style="display:flex;flex-direction:column;gap:8px;"></div>
     </div>
@@ -306,6 +333,11 @@ if ('serviceWorker' in navigator) {
       </div>
       <!-- TRAIN -->
       <div class="subview active" id="sv-train">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+          <div class="slabel" style="margin-bottom:0;">Bloque activo</div>
+          <button class="btn-dashed" style="width:auto;padding:6px 12px;font-size:12px;" onclick="clickFeedback(); addBlock()">+ Nuevo bloque</button>
+        </div>
+        <div class="block-selector" id="blockSelector" style="margin-bottom:12px;"></div>
         <div id="trainContent"></div>
       </div>
       <!-- ROUTINES -->
@@ -350,23 +382,15 @@ if ('serviceWorker' in navigator) {
         </div>
         <!-- Overview -->
         <div class="scard">
-          <div class="stitle">SBD Total — all time</div>
+          <div class="stitle">SBD Total — por semana</div>
           <div class="chart-wrap" id="chartTotalWrap"></div>
         </div>
         <div class="scard">
-          <div class="stitle">Personal Records</div>
+          <div class="stitle">Top Set — SBD</div>
           <div id="prTable"></div>
         </div>
-        <div class="scard">
-          <div class="stitle">Max reps this week</div>
-          <div id="prRepsTable"></div>
-        </div>
-        <!-- Progress -->
-        <div class="scard">
-          <div class="stitle">Weight progression</div>
-          <select class="ex-sel" id="exProgSel"></select>
-          <div class="chart-wrap" id="chartWrap"></div>
-        </div>
+
+
         <!-- Week comparison -->
         <div class="scard">
           <div class="stitle">This week vs last week</div>
@@ -455,6 +479,24 @@ if ('serviceWorker' in navigator) {
     <div class="mactions">
       <button class="btn btn-ghost btn-sm" style="flex:1" onclick="clickFeedback(); closeModal('mEditExercise')">Cancel</button>
       <button class="btn btn-sm" style="flex:2" onclick="clickFeedback(); saveExerciseEdit()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Goal Total -->
+<div class="moverlay" id="mGoal">
+  <div class="modal">
+    <div class="mhandle"></div>
+    <div class="mtitle">Objetivos</div>
+    <div class="fg"><div class="flabel">Squat goal (kg)</div><input type="number" class="finp" id="mGoalSq" placeholder="e.g. 200" min="0" step="2.5" inputmode="decimal"></div>
+    <div class="fg"><div class="flabel">Bench Press goal (kg)</div><input type="number" class="finp" id="mGoalBp" placeholder="e.g. 140" min="0" step="2.5" inputmode="decimal"></div>
+    <div class="fg"><div class="flabel">Deadlift goal (kg)</div><input type="number" class="finp" id="mGoalDl" placeholder="e.g. 240" min="0" step="2.5" inputmode="decimal"></div>
+    <div style="border-top:1px solid var(--bg3);margin:14px 0 14px;"></div>
+    <div class="fg"><div class="flabel">Total SBD goal (kg)</div><input type="number" class="finp" id="mGoalInp" placeholder="e.g. 580" min="0" step="5" inputmode="decimal"></div>
+    <div style="font-size:12px;color:var(--text3);margin-top:-8px;margin-bottom:6px;">Si ingresas los 3 básicos, el total se calcula solo.</div>
+    <div class="mactions">
+      <button class="btn btn-ghost btn-sm" style="flex:1" onclick="clickFeedback(); closeModal('mGoal')">Cancel</button>
+      <button class="btn btn-sm" style="flex:2" onclick="clickFeedback(); saveGoalTotal()">Save</button>
     </div>
   </div>
 </div>
@@ -684,12 +726,85 @@ function renderDash() {
   }).join('');
 
   const all = [oneRMs.sq, oneRMs.bp, oneRMs.dl];
+  let currentTotal = null;
   if(all.every(Boolean)) {
-    document.getElementById('totalVal').textContent = all.reduce((a,b)=>a+parseFloat(b),0);
+    currentTotal = all.reduce((a,b)=>a+parseFloat(b),0);
+    document.getElementById('totalVal').textContent = currentTotal;
     document.getElementById('totalUnit').textContent = 'kg';
   } else {
     document.getElementById('totalVal').textContent = '—';
     document.getElementById('totalUnit').textContent = '';
+  }
+
+  // Per-lift goals + total goal
+  const goals = LS.get('mx_goals_v2') || {};
+  const goalRow = document.getElementById('goalTotalRow');
+  const goalSetRow = document.getElementById('goalTotalSetRow');
+  const liftGoalsRow = document.getElementById('liftGoalsRow');
+  const hasAnyGoal = goals.sq || goals.bp || goals.dl || goals.total;
+
+  if(hasAnyGoal) {
+    goalSetRow.style.display = 'none';
+
+    // Per-lift goal rows (use top set from sessions as current)
+    const {sessions} = getData();
+    const liftDefs = [
+      {key:'Squat', goalKey:'sq', label:'Squat'},
+      {key:'Bench Press', goalKey:'bp', label:'Bench'},
+      {key:'Deadlift', goalKey:'dl', label:'Deadlift'},
+    ];
+    let autoTotal = 0;
+    let hasAllLifts = true;
+    const liftRows = liftDefs.map(l => {
+      const goal = parseFloat(goals[l.goalKey]) || null;
+      const best = getTopSetForLift(l.key, sessions);
+      const current = best ? best.w : (oneRMs[l.goalKey === 'sq' ? 'sq' : l.goalKey === 'bp' ? 'bp' : 'dl'] || null);
+      if(current) autoTotal += current; else hasAllLifts = false;
+      if(!goal) return '';
+      const missing = current !== null ? Math.max(0, goal - current) : null;
+      const pct = current !== null ? Math.min(100, Math.round((current/goal)*100)) : 0;
+      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 16px;border-bottom:1px solid var(--bg3);">
+        <div>
+          <div style="font-size:13px;font-weight:600;color:var(--text2);">${l.label}</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:2px;">${current !== null ? current+'kg actual' : 'sin datos'} → <span style="color:var(--text2);">${goal}kg</span></div>
+          <div style="width:80px;height:3px;background:var(--bg4);border-radius:2px;margin-top:5px;"><div style="width:${pct}%;height:100%;background:#cc2222;border-radius:2px;transition:width .3s;"></div></div>
+        </div>
+        <div style="text-align:right;">
+          ${missing !== null ? (missing > 0
+            ? `<div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:#cc2222;line-height:1;">-${missing}kg</div>`
+            : `<div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:#4caf50;line-height:1;">✓</div>`)
+            : '<div style="font-size:13px;color:var(--text3);">—</div>'}
+        </div>
+      </div>`;
+    }).join('');
+
+    if(liftGoalsRow) {
+      liftGoalsRow.style.display = liftRows.trim() ? 'block' : 'none';
+      liftGoalsRow.innerHTML = liftRows;
+    }
+
+    // Total goal row
+    const totalGoal = goals.total || (goals.sq && goals.bp && goals.dl ? (parseFloat(goals.sq)+parseFloat(goals.bp)+parseFloat(goals.dl)) : null);
+    if(totalGoal) {
+      const g = parseFloat(totalGoal);
+      goalRow.style.display = 'flex';
+      document.getElementById('goalTotalVal').textContent = g + ' kg';
+      if(currentTotal !== null) {
+        const missing = Math.max(0, g - currentTotal);
+        document.getElementById('goalTotalMissing').textContent = missing > 0 ? '-' + missing + ' kg' : '✓ Logrado';
+        document.getElementById('goalTotalMissing').style.color = missing > 0 ? '#cc2222' : '#4caf50';
+      } else {
+        document.getElementById('goalTotalMissing').textContent = '—';
+      }
+    } else {
+      goalRow.style.display = 'none';
+      if(liftGoalsRow) liftGoalsRow.style.display = 'none';
+    }
+
+  } else {
+    goalRow.style.display = 'none';
+    goalSetRow.style.display = 'flex';
+    if(liftGoalsRow) liftGoalsRow.style.display = 'none';
   }
 
   const ws = weekStart(todayISO());
@@ -1880,16 +1995,6 @@ function navToStats(subview) {
 
 function navToProgress(exName) {
   navToStats('statsview');
-  // after render, set the select to this exercise
-  setTimeout(() => {
-    const sel = document.getElementById('exProgSel');
-    if(sel && exName) {
-      // find closest match
-      const opts = [...sel.options].map(o=>o.value);
-      const match = opts.find(o=>o.toLowerCase().includes(exName.toLowerCase()));
-      if(match) { sel.value = match; drawProgressChart(getData().sessions, match); }
-    }
-  }, 50);
 }
 
 // ── STATS ─────────────────────────────────────────────────────
@@ -1943,12 +2048,25 @@ function getBestRepsForWeight(exName, weight, sessions) {
 }
 
 function getPRs(sessions) {
+  // Returns top set per basic lift: the set with highest weight (tiebreak: most reps)
+  // Only considers sets marked as topSet, or if none are marked, uses all sets
   const prs = {Squat:null, 'Bench Press':null, Deadlift:null};
   sessions.forEach(s => {
     for(const [lift, getter] of Object.entries(SBD_KEYS)) {
       const exs = getter(s);
-      const max = getMaxWeight(exs);
-      if(max && (!prs[lift] || max > prs[lift].w)) prs[lift] = {w:max, date:s.date};
+      exs.forEach(ex => {
+        // Prefer top set if available
+        const setsToCheck = ex.topSet ? ex.sets : ex.sets;
+        setsToCheck.forEach(st => {
+          const w = parseFloat(st.weight) || 0;
+          const r = parseInt(st.reps) || 0;
+          if(w > 0 && r > 0) {
+            if(!prs[lift] || w > prs[lift].w || (w === prs[lift].w && r > prs[lift].r)) {
+              prs[lift] = {w, r, date: s.date};
+            }
+          }
+        });
+      });
     }
   });
   return prs;
@@ -1976,27 +2094,15 @@ function renderStats() {
   renderStreak(sessions);
   renderFreq(sessions);
 
-  // ── PR Table
+  // ── Top Set Table (weight x reps per SBD)
   const prs=getPRs(sessions);
   const prEl=document.getElementById('prTable');
   const lifts=['Squat','Bench Press','Deadlift'];
   if(!lifts.some(l=>prs[l])){prEl.innerHTML=`<div class="pr-empty">No data yet</div>`;}
-  else{prEl.innerHTML=lifts.map(l=>{const pr=prs[l];return `<div class="pr-row"><div class="pr-lift">${l}</div><div class="pr-right">${pr?`<div class="pr-val">${pr.w} <span style="font-size:13px;color:var(--text3)">kg</span></div><div class="pr-date">${fmtDate(pr.date)}</div>`:`<div class="pr-date">no data</div>`}</div></div>`;}).join('');}
-  const weekRepsPRs=getWeekRepsPRs(sessions);
-  const prRepsEl=document.getElementById('prRepsTable');
-  if(prRepsEl){if(!lifts.some(l=>weekRepsPRs[l])){prRepsEl.innerHTML=`<div class="pr-empty">No data yet</div>`;}else{prRepsEl.innerHTML=lifts.map(l=>{const pr=weekRepsPRs[l];return `<div class="pr-row"><div class="pr-lift">${l}</div><div class="pr-right">${pr?`<div style="display:flex;align-items:baseline;gap:4px;"><span style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--text2)">${pr.reps}</span><span style="font-size:12px;color:var(--text3)">reps @ ${pr.w}kg</span></div><div style="font-size:11px;color:var(--text3)">${fmtDate(pr.date)}</div>`:`<div style="font-size:12px;color:var(--text3)">no data</div>`}</div></div>`;}).join('');}}
+  else{prEl.innerHTML=lifts.map(l=>{const pr=prs[l];return `<div class="pr-row"><div class="pr-lift">${l}</div><div class="pr-right">${pr?`<div class="pr-val">${pr.w}<span style="font-size:16px;color:var(--text3)"> kg</span> <span style="font-size:18px;color:var(--text3)">× ${pr.r}</span></div><div class="pr-date">${fmtDate(pr.date)}</div>`:`<div class="pr-date">no data</div>`}</div></div>`;}).join('');}
 
   // ── SBD Total chart (over time — per session, sum of best S+B+D)
   drawTotalChart(sessions);
-
-  // ── Progress chart (by exercise)
-  const sel = document.getElementById('exProgSel');
-  const allEx = [...new Set(sessions.flatMap(s=>s.exercises.map(e=>e.name)))].sort();
-  const prev = sel.value;
-  sel.innerHTML = allEx.length ? allEx.map(e=>`<option>${e}</option>`).join('') : '<option>No data</option>';
-  if(prev && allEx.includes(prev)) sel.value = prev;
-  drawProgressChart(sessions, sel.value);
-  sel.onchange = () => drawProgressChart(sessions, sel.value);
 
   // ── Week comparison
   renderWeekCompare(sessions);
@@ -2005,27 +2111,33 @@ function renderStats() {
 function drawTotalChart(sessions) {
   const wrap = document.getElementById('chartTotalWrap');
   if(!wrap) return;
-  // For each session that has at least one SBD lift, compute best S+B+D available
-  const byDate = {};
+  // Group sessions by week, compute best top set per SBD lift each week
+  const byWeek = {};
   sessions.forEach(s => {
-    const vals = {};
+    const ws = weekStart(s.date);
+    if(!byWeek[ws]) byWeek[ws] = {};
     for(const [lift, getter] of Object.entries(SBD_KEYS)) {
-      const max = getMaxWeight(getter(s));
-      if(max) vals[lift] = max;
-    }
-    if(Object.keys(vals).length === 0) return;
-    if(!byDate[s.date]) byDate[s.date] = {};
-    for(const [k,v] of Object.entries(vals)) {
-      if(!byDate[s.date][k] || v > byDate[s.date][k]) byDate[s.date][k] = v;
+      getter(s).forEach(ex => {
+        // Use top set if flagged, otherwise best set
+        const setsToCheck = ex.topSet
+          ? ex.sets.filter(st => parseFloat(st.weight) > 0 && parseInt(st.reps) > 0)
+          : ex.sets.filter(st => parseFloat(st.weight) > 0 && parseInt(st.reps) > 0);
+        setsToCheck.forEach(st => {
+          const w = parseFloat(st.weight) || 0;
+          if(w > 0) {
+            if(!byWeek[ws][lift] || w > byWeek[ws][lift]) byWeek[ws][lift] = w;
+          }
+        });
+      });
     }
   });
-  // Only plot dates where all 3 are known
-  const points = Object.entries(byDate)
+  // Only plot weeks where all 3 lifts have data
+  const points = Object.entries(byWeek)
     .filter(([,v]) => v['Squat'] && v['Bench Press'] && v['Deadlift'])
-    .map(([date,v]) => ({date, total: v['Squat']+v['Bench Press']+v['Deadlift']}))
-    .sort((a,b)=>a.date.localeCompare(b.date));
+    .map(([ws, v]) => ({date: ws, total: v['Squat'] + v['Bench Press'] + v['Deadlift']}))
+    .sort((a,b) => a.date.localeCompare(b.date));
 
-  if(points.length < 2) { wrap.innerHTML='<div class="chart-empty">Need sessions with S+B+D to show total</div>'; return; }
+  if(points.length < 2) { wrap.innerHTML='<div class="chart-empty">Necesitas sesiones con S+B+D para ver el total</div>'; return; }
   drawLineChart(wrap, points.map(p=>p.total), points.map(p=>p.date), '#cc2222');
 }
 
@@ -2174,6 +2286,7 @@ function renderAll() {
   renderExLib();
   renderHist();
   renderStats();
+  renderBlocks();
 }
 
 // ── STATS: STREAK + HEATMAP ───────────────────────────────────
@@ -2313,6 +2426,104 @@ renderTpl();
 renderExLib();
 renderHist();
 renderStats();
+
+// ── GOAL TOTAL ────────────────────────────────────────────────
+function openGoalModal() {
+  const goals = LS.get('mx_goals_v2') || {};
+  document.getElementById('mGoalSq').value = goals.sq || '';
+  document.getElementById('mGoalBp').value = goals.bp || '';
+  document.getElementById('mGoalDl').value = goals.dl || '';
+  // Auto-fill total if all 3 are set
+  const sq = parseFloat(goals.sq)||0, bp = parseFloat(goals.bp)||0, dl = parseFloat(goals.dl)||0;
+  document.getElementById('mGoalInp').value = (sq && bp && dl) ? (sq+bp+dl) : (goals.total || '');
+  // Live-calculate total when individual goals change
+  ['mGoalSq','mGoalBp','mGoalDl'].forEach(id => {
+    document.getElementById(id).oninput = () => {
+      const s=parseFloat(document.getElementById('mGoalSq').value)||0;
+      const b=parseFloat(document.getElementById('mGoalBp').value)||0;
+      const d=parseFloat(document.getElementById('mGoalDl').value)||0;
+      if(s && b && d) document.getElementById('mGoalInp').value = s+b+d;
+    };
+  });
+  openModal('mGoal');
+}
+
+function saveGoalTotal() {
+  const sq = parseFloat(document.getElementById('mGoalSq').value) || null;
+  const bp = parseFloat(document.getElementById('mGoalBp').value) || null;
+  const dl = parseFloat(document.getElementById('mGoalDl').value) || null;
+  const totalInp = parseFloat(document.getElementById('mGoalInp').value) || null;
+  const total = (sq && bp && dl) ? sq+bp+dl : totalInp;
+  const goals = { sq, bp, dl, total };
+  LS.set('mx_goals_v2', goals);
+  closeModal('mGoal');
+  renderDash();
+}
+
+function getTopSetForLift(liftKey, sessions) {
+  // Returns best top set (highest weight, tiebreak reps) across all sessions for a SBD lift
+  const getter = SBD_KEYS[liftKey];
+  if(!getter) return null;
+  let best = null;
+  sessions.forEach(s => {
+    getter(s).forEach(ex => {
+      ex.sets.forEach(st => {
+        const w = parseFloat(st.weight)||0;
+        const r = parseInt(st.reps)||0;
+        if(w > 0 && r > 0) {
+          if(!best || w > best.w || (w === best.w && r > best.r)) best = {w, r};
+        }
+      });
+    });
+  });
+  return best;
+}
+
+// ── TRAINING BLOCKS ───────────────────────────────────────────
+function getBlocks() { return LS.get('mx_blocks') || []; }
+function saveBlocks(b) { LS.set('mx_blocks', b); }
+function getActiveBlock() { return LS.get('mx_active_block') || null; }
+function setActiveBlock(id) { LS.set('mx_active_block', id); }
+
+function addBlock() {
+  const blocks = getBlocks();
+  const num = blocks.length + 1;
+  const id = 'blk_' + Date.now();
+  const name = 'Bloque ' + num;
+  blocks.push({ id, name, createdAt: new Date().toISOString().split('T')[0] });
+  saveBlocks(blocks);
+  setActiveBlock(id);
+  renderBlocks();
+}
+
+function deleteBlock(id) {
+  let blocks = getBlocks();
+  blocks = blocks.filter(b => b.id !== id);
+  saveBlocks(blocks);
+  if(getActiveBlock() === id) {
+    setActiveBlock(blocks.length ? blocks[blocks.length - 1].id : null);
+  }
+  renderBlocks();
+}
+
+function renderBlocks() {
+  const sel = document.getElementById('blockSelector');
+  if(!sel) return;
+  const blocks = getBlocks();
+  const active = getActiveBlock();
+  if(!blocks.length) {
+    sel.innerHTML = '<div style="font-size:13px;color:var(--text3);padding:4px 0;">Sin bloques — crea uno para empezar</div>';
+    return;
+  }
+  sel.innerHTML = blocks.map(b => {
+    const isActive = b.id === active;
+    return `<div style="display:flex;align-items:center;gap:4px;">
+      <button class="block-btn${isActive ? ' active' : ''}" onclick="clickFeedback(); setActiveBlock('${b.id}'); renderBlocks();">${b.name}${isActive ? ' <span style='font-size:9px;'>●</span>' : ''}</button>
+      <button class="icon-btn" style="width:24px;height:24px;font-size:11px;" onclick="clickFeedback(); deleteBlock('${b.id}')">✕</button>
+    </div>`;
+  }).join('');
+}
+
 </script>
 </body>
 </html>
