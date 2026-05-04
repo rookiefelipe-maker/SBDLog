@@ -310,7 +310,7 @@ if ('serviceWorker' in navigator) {
             <div class="goal-total-val" id="goalTotalVal">—</div>
           </div>
           <div style="text-align:right;">
-            <div class="goal-total-label">Falta</div>
+            <div class="goal-total-label">Missing</div>
             <div class="goal-total-missing" id="goalTotalMissing">—</div>
           </div>
           <button class="icon-btn" onclick="clickFeedback(); openGoalModal()" style="margin-left:8px;" title="Edit goal">✏️</button>
@@ -334,8 +334,8 @@ if ('serviceWorker' in navigator) {
       <!-- TRAIN -->
       <div class="subview active" id="sv-train">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-          <div class="slabel" style="margin-bottom:0;">Bloque activo</div>
-          <button class="btn-dashed" style="width:auto;padding:6px 12px;font-size:12px;" onclick="clickFeedback(); addBlock()">+ Nuevo bloque</button>
+          <div class="slabel" style="margin-bottom:0;">Active block</div>
+          <button class="btn-dashed" style="width:auto;padding:6px 12px;font-size:12px;" onclick="clickFeedback(); addBlock()">+ New block</button>
         </div>
         <div class="block-selector" id="blockSelector" style="margin-bottom:12px;"></div>
         <div id="trainContent"></div>
@@ -382,7 +382,7 @@ if ('serviceWorker' in navigator) {
         </div>
         <!-- Overview -->
         <div class="scard">
-          <div class="stitle">SBD Total — por semana</div>
+          <div class="stitle">SBD Total — by week</div>
           <div class="chart-wrap" id="chartTotalWrap"></div>
         </div>
         <div class="scard">
@@ -473,9 +473,9 @@ if ('serviceWorker' in navigator) {
   <div class="modal">
     <div class="mhandle"></div>
     <div class="mtitle" id="mEditExTitle">Edit Exercise</div>
-    <div class="fg"><div class="flabel">Series</div><input type="number" class="finp" id="editExSets" placeholder="3" min="1" max="10" step="1" inputmode="numeric"></div>
+    <div class="fg"><div class="flabel">Sets</div><input type="number" class="finp" id="editExSets" placeholder="3" min="1" max="10" step="1" inputmode="numeric"></div>
     <div class="fg"><div class="flabel">Reps</div><input type="number" class="finp" id="editExReps" placeholder="8" min="1" max="30" step="1" inputmode="numeric"></div>
-    <div class="fg"><div class="flabel">Peso (kg)</div><input type="text" class="finp" id="editExWeight" placeholder="60"></div>
+    <div class="fg"><div class="flabel">Weight (kg)</div><input type="text" class="finp" id="editExWeight" placeholder="60"></div>
     <div class="mactions">
       <button class="btn btn-ghost btn-sm" style="flex:1" onclick="clickFeedback(); closeModal('mEditExercise')">Cancel</button>
       <button class="btn btn-sm" style="flex:2" onclick="clickFeedback(); saveExerciseEdit()">Save</button>
@@ -487,13 +487,13 @@ if ('serviceWorker' in navigator) {
 <div class="moverlay" id="mGoal">
   <div class="modal">
     <div class="mhandle"></div>
-    <div class="mtitle">Objetivos</div>
+    <div class="mtitle">Goals</div>
     <div class="fg"><div class="flabel">Squat goal (kg)</div><input type="number" class="finp" id="mGoalSq" placeholder="e.g. 200" min="0" step="2.5" inputmode="decimal"></div>
     <div class="fg"><div class="flabel">Bench Press goal (kg)</div><input type="number" class="finp" id="mGoalBp" placeholder="e.g. 140" min="0" step="2.5" inputmode="decimal"></div>
     <div class="fg"><div class="flabel">Deadlift goal (kg)</div><input type="number" class="finp" id="mGoalDl" placeholder="e.g. 240" min="0" step="2.5" inputmode="decimal"></div>
     <div style="border-top:1px solid var(--bg3);margin:14px 0 14px;"></div>
-    <div class="fg"><div class="flabel">Total SBD goal (kg)</div><input type="number" class="finp" id="mGoalInp" placeholder="e.g. 580" min="0" step="5" inputmode="decimal"></div>
-    <div style="font-size:12px;color:var(--text3);margin-top:-8px;margin-bottom:6px;">Si ingresas los 3 básicos, el total se calcula solo.</div>
+    <div class="fg"><div class="flabel">SBD Total goal (kg)</div><input type="number" class="finp" id="mGoalInp" placeholder="e.g. 580" min="0" step="5" inputmode="decimal"></div>
+    <div style="font-size:12px;color:var(--text3);margin-top:-8px;margin-bottom:6px;">If you enter all 3 lifts, the total is calculated automatically.</div>
     <div class="mactions">
       <button class="btn btn-ghost btn-sm" style="flex:1" onclick="clickFeedback(); closeModal('mGoal')">Cancel</button>
       <button class="btn btn-sm" style="flex:2" onclick="clickFeedback(); saveGoalTotal()">Save</button>
@@ -575,42 +575,42 @@ function getAllExercises() {
 }
 
 // ── HAPTIC & AUDIO FEEDBACK (Mobile) ──────────────────────────
-// 🔊 Genera un sonido "pop" usando Web Audio API para clicks
+// 🔊 Generates a pop sound "pop" usando Web Audio API para clicks
 function playPopSound() {
   try {
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
     const now = audioContext.currentTime;
     
-    // Crear oscilador para el sonido pop
+    // Create oscillator for pop sound
     const osc = audioContext.createOscillator();
     const gain = audioContext.createGain();
     
     osc.connect(gain);
     gain.connect(audioContext.destination);
     
-    // Frecuencia que baja rápido (efecto "pop")
+    // Frequency drops quickly (pop effect)
     osc.frequency.setValueAtTime(800, now);
     osc.frequency.exponentialRampToValueAtTime(100, now + 0.1);
     
-    // Volumen que desaparece
+    // Volume fades out
     gain.gain.setValueAtTime(0.3, now);
     gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
     
     osc.start(now);
     osc.stop(now + 0.1);
   } catch (e) {
-    // Si Web Audio no está disponible, continúa sin sonido
+    // If Web Audio not available, continue without sound
   }
 }
 
-// 📳 Vibración del dispositivo móvil para feedback táctil
+// 📳 Mobile device vibration for haptic feedback
 function triggerVibration(duration = 10) {
   if (navigator.vibrate) {
     navigator.vibrate(duration);
   }
 }
 
-// ⚡ Función combinada: vibración + sonido (llamar en clicks)
+// ⚡ Combined: vibration + sound (call on clicks)
 function clickFeedback() {
   triggerVibration(10);
   playPopSound();
@@ -633,19 +633,19 @@ function e1rm(w,r) { return r===1 ? w : Math.round(w*(1+r/30)); }
 // ── MODAL HELPERS ─────────────────────────────────────────────
 // 📳 Agregar feedback a los modales
 function openModal(id) {
-  clickFeedback(); // ⚡ Vibración + sonido al abrir modal
+  clickFeedback(); // ⚡ Vibration + sound on modal open
   document.getElementById(id).classList.add('open');
   document.querySelector('.scroll').style.overflow = 'hidden';
 }
 function closeModal(id) {
-  clickFeedback(); // ⚡ Vibración + sonido al cerrar modal
+  clickFeedback(); // ⚡ Vibration + sound on modal close
   document.getElementById(id).classList.remove('open');
   document.querySelector('.scroll').style.overflow = '';
 }
 document.querySelectorAll('.moverlay').forEach(o => {
   o.addEventListener('click', e => { 
     if(e.target===o) {
-      clickFeedback(); // ⚡ Vibración + sonido al cerrar modal por overlay
+      clickFeedback(); // ⚡ Vibration + sound on modal close por overlay
       closeModal(o.id);
     }
   });
@@ -661,7 +661,7 @@ document.querySelectorAll('.moverlay').forEach(o => {
 
 // ── TABS ──────────────────────────────────────────────────────
 let currentView = 'dash';
-// 📳 Agregar feedback a los tabs
+// 📳 Add feedback to tabs
 document.querySelectorAll('.tab').forEach(t => {
   t.addEventListener('click', () => {
     clickFeedback(); // ⚡ Vibración + sonido al hacer click en tab
@@ -675,7 +675,7 @@ document.querySelectorAll('.tab').forEach(t => {
 });
 
 // ── SUBNAV ────────────────────────────────────────────────────
-// 📳 Agregar feedback a los subtabs
+// 📳 Add feedback to subtabs
 document.querySelectorAll('.subnav').forEach(nav => {
   nav.querySelectorAll('.subtab').forEach(st => {
     st.addEventListener('click', () => {
@@ -766,7 +766,7 @@ function renderDash() {
       return `<div style="display:flex;justify-content:space-between;align-items:center;padding:9px 16px;border-bottom:1px solid var(--bg3);">
         <div>
           <div style="font-size:13px;font-weight:600;color:var(--text2);">${l.label}</div>
-          <div style="font-size:11px;color:var(--text3);margin-top:2px;">${current !== null ? current+'kg actual' : 'sin datos'} → <span style="color:var(--text2);">${goal}kg</span></div>
+          <div style="font-size:11px;color:var(--text3);margin-top:2px;">${current !== null ? current+'kg current' : 'no data'} → <span style="color:var(--text2);">${goal}kg</span></div>
           <div style="width:80px;height:3px;background:var(--bg4);border-radius:2px;margin-top:5px;"><div style="width:${pct}%;height:100%;background:#cc2222;border-radius:2px;transition:width .3s;"></div></div>
         </div>
         <div style="text-align:right;">
@@ -791,7 +791,7 @@ function renderDash() {
       document.getElementById('goalTotalVal').textContent = g + ' kg';
       if(currentTotal !== null) {
         const missing = Math.max(0, g - currentTotal);
-        document.getElementById('goalTotalMissing').textContent = missing > 0 ? '-' + missing + ' kg' : '✓ Logrado';
+        document.getElementById('goalTotalMissing').textContent = missing > 0 ? '-' + missing + ' kg' : '✓ Achieved';
         document.getElementById('goalTotalMissing').style.color = missing > 0 ? '#cc2222' : '#4caf50';
       } else {
         document.getElementById('goalTotalMissing').textContent = '—';
@@ -862,7 +862,7 @@ document.getElementById('onermGrid') && document.getElementById('onermGrid').add
 let editingExId = null;
 
 document.getElementById('newExBtn').addEventListener('click', () => {
-  clickFeedback(); // 📳 Vibración + sonido al crear nuevo ejercicio
+  clickFeedback(); // 📳 Vibration + sound on new exercise
   editingExId = null;
   document.getElementById('mExTitle').textContent = 'New exercise';
   document.getElementById('mExName').value = '';
@@ -946,7 +946,7 @@ let editingTplId = null;
 let tplExCount = 0;
 
 document.getElementById('newTplBtn').addEventListener('click', () => {
-  clickFeedback(); // 📳 Vibración + sonido al crear nueva rutina
+  clickFeedback(); // 📳 Vibration + sound on new routine
   editingTplId = null;
   document.getElementById('mTplTitle').textContent = 'New routine';
   document.getElementById('mTplName').value = '';
@@ -1088,9 +1088,9 @@ function addTplEx(val='', isTopSet=false, defaultSets=3, defaultReps=8, defaultW
           <div class="tpl-picker-panel tpl-ac-dropdown" id="tplAcDrop${id}" style="display:none;max-height:200px;overflow-y:auto;position:relative;z-index:10;"></div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:6px;">
-          <div><label style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Series</label><input type="number" class="finp tpl-sets-inp" value="${defaultSets}" min="1" max="10" style="font-size:13px;padding:8px 10px;"></div>
+          <div><label style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Sets</label><input type="number" class="finp tpl-sets-inp" value="${defaultSets}" min="1" max="10" style="font-size:13px;padding:8px 10px;"></div>
           <div><label style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Reps</label><input type="number" class="finp tpl-reps-inp" value="${defaultReps}" min="1" max="30" style="font-size:13px;padding:8px 10px;"></div>
-          <div><label style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Peso (kg)</label><input type="text" class="finp tpl-weight-inp" value="${defaultWeight}" placeholder="ej. 60" style="font-size:13px;padding:8px 10px;"></div>
+          <div><label style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;">Weight (kg)</label><input type="text" class="finp tpl-weight-inp" value="${defaultWeight}" placeholder="ej. 60" style="font-size:13px;padding:8px 10px;"></div>
         </div>
         <div class="topset-toggle">
           <label class="toggle-wrap">
@@ -1432,7 +1432,7 @@ function renderActiveSession() {
   const rtDisplay = rt.running ? formatTimer(rt.remaining) : formatTimer(rt.default);
 
   let html = `
-    <button class="btn btn-ghost btn-sm" style="margin-bottom:10px; width:auto;" onclick="clickFeedback(); dismissSession();">← Volver</button>
+    <button class="btn btn-ghost btn-sm" style="margin-bottom:10px; width:auto;" onclick="clickFeedback(); dismissSession();">← Back</button>
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
       <div>
         <div class="sess-tname">${activeSession.tplName}</div>
@@ -1533,7 +1533,7 @@ function buildSetRow(ei, si, weight='', reps='', rpe='') {
   const {sessions} = getData();
   const exName = ex ? ex.name : '';
   const prReps = exName && weight ? getBestRepsForWeight(exName, weight, sessions) : null;
-  const prRepsHtml = prReps ? `<div class="spr" id="spr-${ei}-${si}" title="Tu PR con este peso">×${prReps}</div>` : `<div class="spr" id="spr-${ei}-${si}"></div>`;
+  const prRepsHtml = prReps ? `<div class="spr" id="spr-${ei}-${si}" title="Your PR at this weight">×${prReps}</div>` : `<div class="spr" id="spr-${ei}-${si}"></div>`;
   return `<div class="srow-d" data-ei="${ei}" data-si="${si}">
     <button class="sn-rpe ${rpeClass}" onclick="cycleRpe(this,${ei},${si})" title="Tap to rate">${rpeLabel}</button>
     <input type="number" class="sinp w-inp" value="${weight}" placeholder="0" min="0" step="0.5" inputmode="decimal"
@@ -1845,7 +1845,7 @@ function addExManualToSession() {
   if(body) body.scrollTop = body.scrollHeight;
 }
 
-// Close modal but keep session alive in LS (used by ← Volver button)
+// Close modal but keep session alive in LS (used by ← Back button)
 function dismissSession() {
   collectSessionFromDOM();
   closeModal('mSess');
@@ -2137,7 +2137,7 @@ function drawTotalChart(sessions) {
     .map(([ws, v]) => ({date: ws, total: v['Squat'] + v['Bench Press'] + v['Deadlift']}))
     .sort((a,b) => a.date.localeCompare(b.date));
 
-  if(points.length < 2) { wrap.innerHTML='<div class="chart-empty">Necesitas sesiones con S+B+D para ver el total</div>'; return; }
+  if(points.length < 2) { wrap.innerHTML='<div class="chart-empty">Need sessions with S+B+D to show total</div>'; return; }
   drawLineChart(wrap, points.map(p=>p.total), points.map(p=>p.date), '#cc2222');
 }
 
@@ -2489,7 +2489,7 @@ function addBlock() {
   const blocks = getBlocks();
   const num = blocks.length + 1;
   const id = 'blk_' + Date.now();
-  const name = 'Bloque ' + num;
+  const name = 'Block ' + num;
   blocks.push({ id, name, createdAt: new Date().toISOString().split('T')[0] });
   saveBlocks(blocks);
   setActiveBlock(id);
@@ -2512,7 +2512,7 @@ function renderBlocks() {
   const blocks = getBlocks();
   const active = getActiveBlock();
   if(!blocks.length) {
-    sel.innerHTML = '<div style="font-size:13px;color:var(--text3);padding:4px 0;">Sin bloques — crea uno para empezar</div>';
+    sel.innerHTML = '<div style="font-size:13px;color:var(--text3);padding:4px 0;">No blocks yet — create one to start</div>';
     return;
   }
   sel.innerHTML = blocks.map(b => {
@@ -2531,4 +2531,3 @@ function renderBlocks() {
 </script>
 </body>
 </html>
-
