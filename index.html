@@ -225,6 +225,46 @@ html,body{height:100%;background:var(--bg0);color:var(--text1);font-family:'DM S
 .btn-red:active{background:#3a0a0a;}
 .confirm-inp{background:var(--bg3);border:1px solid var(--bg4);border-radius:var(--rs);color:var(--text1);font-family:'DM Sans',sans-serif;font-size:14px;padding:10px 12px;width:100%;outline:none;margin-top:8px;}
 .confirm-inp:focus{border-color:var(--bg5);}
+/* PROGRAM WEEK CARD */
+.prog-week-hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
+.prog-week-num{font-family:'Bebas Neue',sans-serif;font-size:48px;line-height:1;color:var(--white);}
+.prog-week-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:var(--text3);margin-top:4px;}
+.prog-phase-badge{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:4px 10px;border-radius:6px;background:rgba(204,34,34,0.15);border:1px solid rgba(204,34,34,0.4);color:#cc2222;}
+.prog-phase-badge.deload{background:rgba(255,193,7,0.1);border-color:rgba(255,193,7,0.4);color:#e6ac00;}
+.prog-phase-badge.test{background:rgba(76,175,80,0.1);border-color:rgba(76,175,80,0.4);color:#4caf50;}
+.prog-lifts-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:var(--bg3);border-radius:var(--rs);overflow:hidden;margin-bottom:10px;}
+.prog-lift-cell{background:var(--bg2);padding:10px 8px;}
+.prog-lift-name{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:3px;}
+.prog-lift-top{font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--white);line-height:1;}
+.prog-lift-bo{font-size:11px;color:var(--text3);margin-top:2px;}
+.prog-lift-pct{font-size:10px;color:var(--text3);}
+.prog-note{font-size:12px;color:var(--text3);line-height:1.5;padding:10px;background:var(--bg3);border-radius:var(--rs);}
+.prog-bar-wrap{margin-bottom:10px;}
+.prog-bar-label{display:flex;justify-content:space-between;font-size:11px;color:var(--text3);margin-bottom:4px;}
+.prog-bar-track{height:4px;background:var(--bg3);border-radius:2px;}
+.prog-bar-fill{height:100%;background:#cc2222;border-radius:2px;transition:width .4s;}
+/* RVP = real vs prescribed */
+.rvp-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--bg3);}
+.rvp-row:last-child{border-bottom:none;}
+.rvp-lift{font-size:14px;font-weight:600;color:var(--text1);}
+.rvp-vals{display:flex;gap:10px;align-items:baseline;}
+.rvp-prescribed{font-size:13px;color:var(--text3);}
+.rvp-real{font-family:'Bebas Neue',sans-serif;font-size:26px;line-height:1;color:var(--white);}
+.rvp-delta{font-size:12px;font-weight:700;}
+.rvp-delta.up{color:#4caf50;}
+.rvp-delta.down{color:#cc2222;}
+.rvp-delta.same{color:var(--text3);}
+.rvp-empty{font-size:13px;color:var(--text3);}
+/* Block compare */
+.blkcmp-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--bg3);}
+.blkcmp-row:last-child{border-bottom:none;}
+.blkcmp-lift{font-size:14px;font-weight:600;color:var(--text1);}
+.blkcmp-vals{display:flex;gap:8px;align-items:baseline;}
+.blkcmp-prev{font-size:13px;color:var(--text3);}
+.blkcmp-cur{font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--white);line-height:1;}
+.blkcmp-delta{font-size:12px;font-weight:700;}
+.blkcmp-delta.up{color:#4caf50;}
+.blkcmp-delta.down{color:#cc2222;}
 /* TOP SET */
 .topset-toggle{display:flex;align-items:center;gap:6px;margin-top:6px;}
 .topset-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--text3);}
@@ -293,6 +333,9 @@ if ('serviceWorker' in navigator) {
 
     <!-- DASHBOARD -->
     <div class="view active" id="v-dash">
+      <div class="slabel">Program week</div>
+      <div id="dashProgWeek" style="display:flex;flex-direction:column;gap:8px;"></div>
+
       <div class="slabel">Real 1RM</div>
       <div class="card">
         <div class="onerm-grid" id="onermGrid"></div>
@@ -367,7 +410,37 @@ if ('serviceWorker' in navigator) {
       </div>
       <!-- STATS -->
       <div class="subview" id="sv-statsview">
-        <!-- Streak + Freq -->
+
+        <!-- Program Week Card -->
+        <div class="scard" id="progWeekCard"></div>
+
+        <!-- e1RM progression per lift -->
+        <div class="scard">
+          <div class="stitle">e1RM — Squat</div>
+          <div class="chart-wrap" style="height:160px;" id="chartSq"></div>
+        </div>
+        <div class="scard">
+          <div class="stitle">e1RM — Bench Press</div>
+          <div class="chart-wrap" style="height:160px;" id="chartBp"></div>
+        </div>
+        <div class="scard">
+          <div class="stitle">e1RM — Deadlift</div>
+          <div class="chart-wrap" style="height:160px;" id="chartDl"></div>
+        </div>
+
+        <!-- Real vs Prescribed -->
+        <div class="scard">
+          <div class="stitle">Real vs Prescribed — this week</div>
+          <div id="realVsPrescribed"></div>
+        </div>
+
+        <!-- Block comparison -->
+        <div class="scard">
+          <div class="stitle">Block comparison</div>
+          <div id="blockCompare"></div>
+        </div>
+
+        <!-- Streak -->
         <div class="scard">
           <div class="stitle">Current streak</div>
           <div class="streak-row">
@@ -375,27 +448,9 @@ if ('serviceWorker' in navigator) {
             <div class="streak-lbl">consecutive days</div>
           </div>
           <div class="streak-best" id="streakBest"></div>
-        </div>
-        <div class="scard">
-          <div class="stitle">Frequency — last 8 weeks</div>
-          <div class="freq-grid" id="freqGrid"></div>
-        </div>
-        <!-- Overview -->
-        <div class="scard">
-          <div class="stitle">SBD Total — by week</div>
-          <div class="chart-wrap" id="chartTotalWrap"></div>
-        </div>
-        <div class="scard">
-          <div class="stitle">Top Set — SBD</div>
-          <div id="prTable"></div>
+          <div class="freq-grid" id="freqGrid" style="margin-top:10px;"></div>
         </div>
 
-
-        <!-- Week comparison -->
-        <div class="scard">
-          <div class="stitle">This week vs last week</div>
-          <div id="weekCompare"></div>
-        </div>
       </div>
     </div>
 
@@ -712,8 +767,46 @@ function renderView(v) {
   }
 }
 
+// ── DASHBOARD PROGRAM WEEK ────────────────────────────────────
+function renderDashProgWeek() {
+  const el = document.getElementById('dashProgWeek');
+  if(!el) return;
+  const pw = getCurrentProgWeek();
+  if(!pw) { el.innerHTML = '<div style="font-size:13px;color:var(--text3);padding:4px 0;">Program starts May 11</div>'; return; }
+  const phaseClass = pw.phase==='deload'?'deload':pw.phase==='test'?'test':'';
+  el.innerHTML = `
+    <div class="card" style="padding:14px 16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <div>
+          <span style="font-family:'Bebas Neue',sans-serif;font-size:30px;color:var(--white);line-height:1;">S${pw.wnum}</span>
+          <span style="font-size:12px;color:var(--text3);margin-left:8px;">${pw.dates}</span>
+        </div>
+        <span class="prog-phase-badge ${phaseClass}">${pw.phaseLabel}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;">
+        <div style="background:var(--bg3);border-radius:var(--rs);padding:8px 10px;">
+          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;">Squat</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--white);line-height:1;">${pw.sq}kg</div>
+          <div style="font-size:10px;color:var(--text3);">${pw.sq_pct}% · bo ${pw.sq_bo}</div>
+        </div>
+        <div style="background:var(--bg3);border-radius:var(--rs);padding:8px 10px;">
+          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;">Bench</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--white);line-height:1;">${pw.bp}kg</div>
+          <div style="font-size:10px;color:var(--text3);">${pw.bp_pct}% · bo ${pw.bp_bo}</div>
+        </div>
+        <div style="background:var(--bg3);border-radius:var(--rs);padding:8px 10px;">
+          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;">DL</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--white);line-height:1;">${pw.dl}kg</div>
+          <div style="font-size:10px;color:var(--text3);">${pw.dl_pct}% · bo ${pw.dl_bo}</div>
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--text3);line-height:1.5;">${pw.note}</div>
+    </div>`;
+}
+
 // ── DASHBOARD ─────────────────────────────────────────────────
 function renderDash() {
+  renderDashProgWeek();
   const {oneRMs, sessions} = getData();
   const grid = document.getElementById('onermGrid');
   const lifts = [{k:'sq',n:'Squat'},{k:'bp',n:'Bench'},{k:'dl',n:'Deadlift'}];
@@ -1997,11 +2090,51 @@ function navToProgress(exName) {
   navToStats('statsview');
 }
 
+// ── PROGRAM DATA (32 semanas, arranca S2 = 11 Mayo 2026) ──────
+const PROG_RM = {sq:188, bp:117, dl:188};
+function r5(x){return Math.round(x/5)*5;}
+const PROG_START = new Date('2026-05-11T12:00:00');
+const PROG_WEEKS = [];
+const PROG_DATES=['11 May–17 May','18 May–24 May','25 May–31 May','01 Jun–07 Jun','08 Jun–14 Jun','15 Jun–21 Jun','22 Jun–28 Jun','29 Jun–05 Jul','06 Jul–12 Jul','13 Jul–19 Jul','20 Jul–26 Jul','27 Jul–02 Ago','03 Ago–09 Ago','10 Ago–16 Ago','17 Ago–23 Ago','24 Ago–30 Ago','31 Ago–06 Sep','07 Sep–13 Sep','14 Sep–20 Sep','21 Sep–27 Sep','28 Sep–04 Oct','05 Oct–11 Oct','12 Oct–18 Oct','19 Oct–25 Oct','26 Oct–01 Nov','02 Nov–08 Nov','09 Nov–15 Nov','16 Nov–22 Nov','23 Nov–29 Nov','30 Nov–06 Dic','07 Dic–13 Dic','14 Dic–20 Dic'];
+const PROG_NOTES=['Week 1 at 70%. Block 1 is technical mastery. Work on progressive wide stance with your partner present.','If you finished last week at RPE ≤7, add 1 rep. If it was RPE 8, maintain.','Third week. Wide stance should feel less strange. If TFL still hurts, don\'t force it.','Block 1 midpoint. At least 1 main lift should have progressed in reps.','Second-to-last strong week. Don\'t force progression if the body is loaded — deload is near.','Last week of Block 1. Log all weights — they\'re your baseline for Block 2.','DELOAD — 2 sets per exercise, 60% weights. Not wasted time, this is where adaptations consolidate.','Block 2 starts — hypertrophy. Accessories go to 4 sets. Day D DL changes to deficit.','Hypertrophy block underway. Start dropping RIR on the last set of accessories — aim for RIR 1-2.','Volume accumulating. Prioritize sleep and food — without recovery, volume is useless.','Volume peak of the program. If something hurts (not just aches — actually hurts), drop the weight.','Maintaining volume. Technique first, especially with accumulated fatigue.','Second-to-last week of Block 2. Log accessory weights as reference for Block 3.','Last week of Block 2. The most demanding in volume — arriving tired at the deload is correct.','DELOAD — the most important so far. Full recovery.','Block 3 starts — intensification. Volume drops, intensity rises. Target RPE on top sets: 8-9.','Back-off sets feel heavier — normal, you\'re working at higher percentages.','Block 3 midpoint. Squat and DL should feel technically more solid than in May.','Squat reaching 160kg — approaching your previous zone of mastery. But now with better technique.','The main lifts get serious. Warm up well, full rest between sets (3-4 min).','Last week of Block 3. Body is loaded — arriving tired at the deload is correct.','DELOAD — third and last before the peak. The most critical. Enter the final block rested.','PEAK started. Accessories down to 2 sets. The main lifts are the absolute focus.','Peak underway. Every kg counts. Impeccable technique on every rep.','November. The goal is visible on the horizon. Reduce extra activity outside the gym.','Squat >165kg top set. DL near 165kg. Bench is the one that fights — patience.','Three weeks to the test. Don\'t change anything that\'s working.','Two weeks. Reduce outside-gym activity to a minimum. Sleep is top priority.','One week before the test. Moderate weights, max RPE 7, arrive fresh.','Last strong week. After this the body rests for the final test.','Pre-test. 2-3 sets per main lift at 75-80%, RPE 6-7. Arrive fresh.','TEST — December 14. Squat 200 · Bench 140 · DL 260. Trust the process.'];
+for(let i=0;i<32;i++){
+  const wnum=i+2;
+  let block,phase,sq_pct,bp_pct,dl_pct;
+  if(wnum<=7){block=1;phase='fuerza';const s=wnum-2;sq_pct=0.70+s*0.02;dl_pct=0.725+s*0.02;bp_pct=0.75+s*0.02;}
+  else if(wnum===8){block=1;phase='deload';sq_pct=0.60;dl_pct=0.75;bp_pct=0.75;}
+  else if(wnum<=14){block=2;phase='hiper';const s=wnum-9;sq_pct=0.72+s*0.02;dl_pct=0.75+s*0.02;bp_pct=0.77+s*0.02;}
+  else if(wnum===15){block=2;phase='deload';sq_pct=0.60;dl_pct=0.75;bp_pct=0.75;}
+  else if(wnum<=21){block=3;phase='intensidad';const s=wnum-16;sq_pct=0.78+s*0.02;dl_pct=0.80+s*0.02;bp_pct=0.80+s*0.02;}
+  else if(wnum===22){block=3;phase='deload';sq_pct=0.60;dl_pct=0.75;bp_pct=0.75;}
+  else if(wnum<=31){block=4;phase='peak';const s=wnum-23;sq_pct=Math.min(0.82+s*0.015,0.97);dl_pct=Math.min(0.84+s*0.015,0.97);bp_pct=Math.min(0.82+s*0.015,0.97);}
+  else{block=4;phase='test';sq_pct=0.95;dl_pct=0.95;bp_pct=0.95;}
+  const sq=r5(PROG_RM.sq*sq_pct), bp=r5(PROG_RM.bp*bp_pct), dl=r5(PROG_RM.dl*dl_pct);
+  const sq_bo=r5(sq*0.90), bp_bo=r5(bp*0.90), dl_bo=r5(dl*0.90);
+  const phaseLabel={fuerza:'Strength',hiper:'Hypertrophy',intensidad:'Intensification',peak:'Peak',deload:'Deload',test:'1RM Test'};
+  PROG_WEEKS.push({wnum,block,phase,phaseLabel:phaseLabel[phase],dates:PROG_DATES[i],note:PROG_NOTES[i],sq,bp,dl,sq_bo,bp_bo,dl_bo,sq_pct:Math.round(sq_pct*100),bp_pct:Math.round(bp_pct*100),dl_pct:Math.round(dl_pct*100)});
+}
+
+function getCurrentProgWeek() {
+  const today = new Date();
+  const msPerWeek = 7*24*60*60*1000;
+  const idx = Math.floor((today - PROG_START) / msPerWeek);
+  if(idx < 0 || idx >= PROG_WEEKS.length) return null;
+  return PROG_WEEKS[idx];
+}
+
+function getProgWeekForDate(isoDate) {
+  const d = new Date(isoDate + 'T12:00:00');
+  const msPerWeek = 7*24*60*60*1000;
+  const idx = Math.floor((d - PROG_START) / msPerWeek);
+  if(idx < 0 || idx >= PROG_WEEKS.length) return null;
+  return PROG_WEEKS[idx];
+}
+
 // ── STATS ─────────────────────────────────────────────────────
 const SBD_KEYS = {
-  'Squat':    s => s.exercises.filter(e=>e.name.toLowerCase().includes('squat') && !e.name.toLowerCase().includes('front') && !e.name.toLowerCase().includes('hack')),
-  'Bench Press': s => s.exercises.filter(e=>e.name.toLowerCase().includes('bench') && !e.name.toLowerCase().includes('incline') && !e.name.toLowerCase().includes('close')),
-  'Deadlift': s => s.exercises.filter(e=>e.name.toLowerCase().includes('deadlift') && !e.name.toLowerCase().includes('romanian') && !e.name.toLowerCase().includes('rdl') && !e.name.toLowerCase().includes('deficit')),
+  'Squat':    s => s.exercises.filter(e=>e.name.toLowerCase().includes('squat') && !e.name.toLowerCase().includes('front') && !e.name.toLowerCase().includes('hack') && !e.name.toLowerCase().includes('pause')),
+  'Bench Press': s => s.exercises.filter(e=>e.name.toLowerCase().includes('bench') && !e.name.toLowerCase().includes('incline') && !e.name.toLowerCase().includes('close') && !e.name.toLowerCase().includes('light')),
+  'Deadlift': s => s.exercises.filter(e=>e.name.toLowerCase().includes('deadlift') && !e.name.toLowerCase().includes('romanian') && !e.name.toLowerCase().includes('rdl') && !e.name.toLowerCase().includes('deficit') && !e.name.toLowerCase().includes('pause')),
 };
 
 function getMaxWeight(exercises) {
@@ -2010,8 +2143,6 @@ function getMaxWeight(exercises) {
   return max || null;
 }
 
-// Returns the best set {weight, reps} for a given exercise name across all past sessions
-// "best" = highest weight, tiebreak = most reps
 function getBestSetForExercise(exName, sessions) {
   let best = null;
   sessions.forEach(s => {
@@ -2020,9 +2151,7 @@ function getBestSetForExercise(exName, sessions) {
         const w = parseFloat(st.weight) || 0;
         const r = parseInt(st.reps) || 0;
         if(w > 0 && r > 0) {
-          if(!best || w > best.w || (w === best.w && r > best.r)) {
-            best = {w, r};
-          }
+          if(!best || w > best.w || (w === best.w && r > best.r)) best = {w, r};
         }
       });
     });
@@ -2030,7 +2159,6 @@ function getBestSetForExercise(exName, sessions) {
   return best;
 }
 
-// Returns the best reps ever done at a specific weight for an exercise
 function getBestRepsForWeight(exName, weight, sessions) {
   if(!weight || parseFloat(weight) <= 0) return null;
   const w = parseFloat(weight);
@@ -2048,22 +2176,16 @@ function getBestRepsForWeight(exName, weight, sessions) {
 }
 
 function getPRs(sessions) {
-  // Returns top set per basic lift: the set with highest weight (tiebreak: most reps)
-  // Only considers sets marked as topSet, or if none are marked, uses all sets
   const prs = {Squat:null, 'Bench Press':null, Deadlift:null};
   sessions.forEach(s => {
     for(const [lift, getter] of Object.entries(SBD_KEYS)) {
-      const exs = getter(s);
-      exs.forEach(ex => {
-        // Prefer top set if available
-        const setsToCheck = ex.topSet ? ex.sets : ex.sets;
-        setsToCheck.forEach(st => {
+      getter(s).forEach(ex => {
+        ex.sets.forEach(st => {
           const w = parseFloat(st.weight) || 0;
           const r = parseInt(st.reps) || 0;
           if(w > 0 && r > 0) {
-            if(!prs[lift] || w > prs[lift].w || (w === prs[lift].w && r > prs[lift].r)) {
+            if(!prs[lift] || w > prs[lift].w || (w === prs[lift].w && r > prs[lift].r))
               prs[lift] = {w, r, date: s.date};
-            }
           }
         });
       });
@@ -2072,164 +2194,253 @@ function getPRs(sessions) {
   return prs;
 }
 
-function getWeekRepsPRs(sessions) {
-  const ws=weekStart(todayISO());
-  const prs={Squat:null,'Bench Press':null,Deadlift:null};
-  sessions.filter(s=>weekStart(s.date)===ws).forEach(s=>{
-    for(const [lift,getter] of Object.entries(SBD_KEYS)){
-      getter(s).forEach(ex=>{
-        ex.sets.forEach(st=>{
-          const r=parseInt(st.reps)||0,w=parseFloat(st.weight)||0;
-          if(r>0&&w>0&&(!prs[lift]||r>prs[lift].reps||(r===prs[lift].reps&&w>prs[lift].w)))
-            prs[lift]={reps:r,w,date:s.date};
-        });
+function getTopSetForLift(liftKey, sessions) {
+  const getter = SBD_KEYS[liftKey];
+  if(!getter) return null;
+  let best = null;
+  sessions.forEach(s => {
+    getter(s).forEach(ex => {
+      ex.sets.forEach(st => {
+        const w = parseFloat(st.weight)||0;
+        const r = parseInt(st.reps)||0;
+        if(w > 0 && r > 0) {
+          if(!best || w > best.w || (w === best.w && r > best.r)) best = {w, r};
+        }
       });
-    }
+    });
   });
-  return prs;
+  return best;
 }
 
 function renderStats() {
   const {sessions} = getData();
   renderStreak(sessions);
   renderFreq(sessions);
-
-  // ── Top Set Table (weight x reps per SBD)
-  const prs=getPRs(sessions);
-  const prEl=document.getElementById('prTable');
-  const lifts=['Squat','Bench Press','Deadlift'];
-  if(!lifts.some(l=>prs[l])){prEl.innerHTML=`<div class="pr-empty">No data yet</div>`;}
-  else{prEl.innerHTML=lifts.map(l=>{const pr=prs[l];return `<div class="pr-row"><div class="pr-lift">${l}</div><div class="pr-right">${pr?`<div class="pr-val">${pr.w}<span style="font-size:16px;color:var(--text3)"> kg</span> <span style="font-size:18px;color:var(--text3)">× ${pr.r}</span></div><div class="pr-date">${fmtDate(pr.date)}</div>`:`<div class="pr-date">no data</div>`}</div></div>`;}).join('');}
-
-  // ── SBD Total chart (over time — per session, sum of best S+B+D)
-  drawTotalChart(sessions);
-
-  // ── Week comparison
-  renderWeekCompare(sessions);
+  renderProgWeekCard();
+  renderE1RMCharts(sessions);
+  renderRealVsPrescribed(sessions);
+  renderBlockCompare(sessions);
 }
 
-function drawTotalChart(sessions) {
-  const wrap = document.getElementById('chartTotalWrap');
-  if(!wrap) return;
-  // Group sessions by week, compute best top set per SBD lift each week
-  const byWeek = {};
-  sessions.forEach(s => {
-    const ws = weekStart(s.date);
-    if(!byWeek[ws]) byWeek[ws] = {};
-    for(const [lift, getter] of Object.entries(SBD_KEYS)) {
+function renderProgWeekCard() {
+  const el = document.getElementById('progWeekCard');
+  if(!el) return;
+  const pw = getCurrentProgWeek();
+  if(!pw) {
+    el.innerHTML = `<div class="stitle">Program week</div><div style="font-size:13px;color:var(--text3);">Program hasn't started yet (starts May 11, 2026)</div>`;
+    return;
+  }
+  const totalWeeks = 32;
+  const pct = Math.round(((pw.wnum - 2) / totalWeeks) * 100);
+  const phaseClass = pw.phase === 'deload' ? 'deload' : pw.phase === 'test' ? 'test' : '';
+  el.innerHTML = `
+    <div class="stitle">Program week</div>
+    <div class="prog-week-hdr">
+      <div>
+        <div class="prog-week-num">S${pw.wnum}</div>
+        <div class="prog-week-label">${pw.dates}</div>
+      </div>
+      <div>
+        <span class="prog-phase-badge ${phaseClass}">${pw.phaseLabel}</span>
+        <div style="font-size:11px;color:var(--text3);margin-top:6px;text-align:right;">Block ${pw.block}/4</div>
+      </div>
+    </div>
+    <div class="prog-bar-wrap">
+      <div class="prog-bar-label"><span>Program progress</span><span>${pct}%</span></div>
+      <div class="prog-bar-track"><div class="prog-bar-fill" style="width:${pct}%"></div></div>
+    </div>
+    <div class="prog-lifts-grid">
+      <div class="prog-lift-cell">
+        <div class="prog-lift-name">Squat</div>
+        <div class="prog-lift-top">${pw.sq}<span style="font-size:14px;color:var(--text3)">kg</span></div>
+        <div class="prog-lift-bo">B-off: ${pw.sq_bo}kg</div>
+        <div class="prog-lift-pct">${pw.sq_pct}%</div>
+      </div>
+      <div class="prog-lift-cell">
+        <div class="prog-lift-name">Bench</div>
+        <div class="prog-lift-top">${pw.bp}<span style="font-size:14px;color:var(--text3)">kg</span></div>
+        <div class="prog-lift-bo">B-off: ${pw.bp_bo}kg</div>
+        <div class="prog-lift-pct">${pw.bp_pct}%</div>
+      </div>
+      <div class="prog-lift-cell">
+        <div class="prog-lift-name">DL</div>
+        <div class="prog-lift-top">${pw.dl}<span style="font-size:14px;color:var(--text3)">kg</span></div>
+        <div class="prog-lift-bo">B-off: ${pw.dl_bo}kg</div>
+        <div class="prog-lift-pct">${pw.dl_pct}%</div>
+      </div>
+    </div>
+    <div class="prog-note">${pw.note}</div>`;
+}
+
+function renderE1RMCharts(sessions) {
+  const liftDefs = [
+    {key:'Squat', elId:'chartSq', color:'#cc2222'},
+    {key:'Bench Press', elId:'chartBp', color:'#3a7bd5'},
+    {key:'Deadlift', elId:'chartDl', color:'#e6ac00'},
+  ];
+  liftDefs.forEach(({key, elId, color}) => {
+    const wrap = document.getElementById(elId);
+    if(!wrap) return;
+    wrap.innerHTML = '';
+    const points = [];
+    sessions.forEach(s => {
+      const getter = SBD_KEYS[key];
+      if(!getter) return;
       getter(s).forEach(ex => {
-        // Use top set if flagged, otherwise best set
-        const setsToCheck = ex.topSet
-          ? ex.sets.filter(st => parseFloat(st.weight) > 0 && parseInt(st.reps) > 0)
-          : ex.sets.filter(st => parseFloat(st.weight) > 0 && parseInt(st.reps) > 0);
-        setsToCheck.forEach(st => {
-          const w = parseFloat(st.weight) || 0;
-          if(w > 0) {
-            if(!byWeek[ws][lift] || w > byWeek[ws][lift]) byWeek[ws][lift] = w;
+        let bestE1rm = 0;
+        ex.sets.forEach(st => {
+          const w = parseFloat(st.weight)||0;
+          const r = parseInt(st.reps)||0;
+          if(w > 0 && r > 0) {
+            const est = r===1 ? w : Math.round(w*(1+r/30));
+            if(est > bestE1rm) bestE1rm = est;
           }
         });
+        if(bestE1rm > 0) points.push({date: s.date, v: bestE1rm});
       });
-    }
-  });
-  // Only plot weeks where all 3 lifts have data
-  const points = Object.entries(byWeek)
-    .filter(([,v]) => v['Squat'] && v['Bench Press'] && v['Deadlift'])
-    .map(([ws, v]) => ({date: ws, total: v['Squat'] + v['Bench Press'] + v['Deadlift']}))
-    .sort((a,b) => a.date.localeCompare(b.date));
-
-  if(points.length < 2) { wrap.innerHTML='<div class="chart-empty">Need sessions with S+B+D to show total</div>'; return; }
-  drawLineChart(wrap, points.map(p=>p.total), points.map(p=>p.date), '#cc2222');
-}
-
-function drawProgressChart(sessions, exName) {
-  const wrap = document.getElementById('chartWrap');
-  if(!wrap) return;
-  wrap.innerHTML = '';
-  if(!exName || !sessions.length) { wrap.innerHTML='<div class="chart-empty">No data</div>'; return; }
-  const points = [];
-  sessions.forEach(s => {
-    s.exercises.filter(e=>e.name===exName).forEach(ex => {
-      const maxW = Math.max(...ex.sets.map(st=>parseFloat(st.weight)||0));
-      if(maxW>0) points.push({date:s.date, w:maxW});
     });
+    if(points.length < 2) {
+      wrap.innerHTML = '<div class="chart-empty">Not enough data yet</div>';
+      return;
+    }
+    const sorted = points.sort((a,b)=>a.date.localeCompare(b.date));
+    // Deduplicate by date (keep max per day)
+    const byDate = {};
+    sorted.forEach(p => { if(!byDate[p.date] || p.v > byDate[p.date]) byDate[p.date] = p.v; });
+    const pts = Object.entries(byDate).sort((a,b)=>a[0].localeCompare(b[0]));
+    const vals = pts.map(p=>p[1]);
+    const labels = pts.map(p=>p[0]);
+    drawE1RMChart(wrap, vals, labels, color, PROG_RM[key==='Squat'?'sq':key==='Bench Press'?'bp':'dl']);
   });
-  if(points.length < 2) { wrap.innerHTML='<div class="chart-empty">Not enough data</div>'; return; }
-  const sorted = points.sort((a,b)=>a.date.localeCompare(b.date));
-  drawLineChart(wrap, sorted.map(p=>p.w), sorted.map(p=>p.date), '#888');
 }
 
-function drawLineChart(wrap, values, labels, color) {
+function drawE1RMChart(wrap, values, labels, color, targetRM) {
   wrap.innerHTML = '';
-  const W = wrap.clientWidth||320, H = 120, padL=34, padR=12, padT=14, padB=20;
-  const minV = Math.min(...values), maxV = Math.max(...values);
+  const W = wrap.clientWidth||320, H = 160, padL=38, padR=14, padT=16, padB=22;
+  const minV = Math.min(...values)*0.97;
+  const maxV = Math.max(Math.max(...values)*1.02, targetRM*1.05);
   const range = maxV - minV || 1;
   const n = values.length;
-  const xs = i => padL + (i/(n-1)) * (W-padL-padR);
+  const xs = i => padL + (i/(Math.max(n-1,1))) * (W-padL-padR);
   const ys = v => padT + (1-(v-minV)/range) * (H-padT-padB);
   const pts = values.map((v,i)=>`${xs(i)},${ys(v)}`).join(' ');
   const fill = `${xs(0)},${H-padB} `+values.map((v,i)=>`${xs(i)},${ys(v)}`).join(' ')+` ${xs(n-1)},${H-padB}`;
-  // axis labels
-  const yLabels = [minV, Math.round((minV+maxV)/2), maxV];
-  const yLabelsSvg = yLabels.map(v=>`<text x="${padL-4}" y="${ys(v)+4}" text-anchor="end" fill="#555" font-size="9" font-family="DM Sans">${v}</text>`).join('');
-  // x labels: first and last date
+  const yLabels = [Math.round(minV), Math.round((minV+maxV)/2), Math.round(maxV)];
+  const yLabelsSvg = yLabels.map(v=>`<text x="${padL-5}" y="${ys(v)+4}" text-anchor="end" fill="#555" font-size="10" font-family="DM Sans">${v}</text>`).join('');
   const xLabelsSvg = [0, n-1].map(i=>`<text x="${xs(i)}" y="${H-4}" text-anchor="${i===0?'start':'end'}" fill="#555" font-size="9" font-family="DM Sans">${labels[i].slice(5)}</text>`).join('');
+  const targetY = ys(targetRM);
+  const lastVal = values[n-1];
+  const lastY = ys(lastVal);
+  const uid = color.replace('#','');
   wrap.innerHTML = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
     <defs>
-      <linearGradient id="lg${color.replace('#','')}" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="${color}" stop-opacity=".25"/>
+      <linearGradient id="lg${uid}" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="${color}" stop-opacity=".3"/>
         <stop offset="100%" stop-color="${color}" stop-opacity="0"/>
       </linearGradient>
     </defs>
     <line x1="${padL}" y1="${padT}" x2="${padL}" y2="${H-padB}" stroke="#2a2a2a" stroke-width="1"/>
-    ${yLabelsSvg}
-    ${xLabelsSvg}
-    <polygon points="${fill}" fill="url(#lg${color.replace('#','')})"/>
+    ${yLabelsSvg}${xLabelsSvg}
+    <line x1="${padL}" y1="${targetY}" x2="${W-padR}" y2="${targetY}" stroke="${color}" stroke-width="1" stroke-dasharray="4,3" opacity=".4"/>
+    <text x="${W-padR}" y="${targetY-3}" text-anchor="end" fill="${color}" font-size="9" font-family="DM Sans" opacity=".7">1RM ${targetRM}kg</text>
+    <polygon points="${fill}" fill="url(#lg${uid})"/>
     <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
-    <circle cx="${xs(n-1)}" cy="${ys(values[n-1])}" r="3.5" fill="${color}"/>
-    <text x="${xs(n-1)+6}" y="${ys(values[n-1])+4}" fill="#ccc" font-size="10" font-family="DM Sans">${values[n-1]}kg</text>
+    <circle cx="${xs(n-1)}" cy="${lastY}" r="4" fill="${color}"/>
+    <text x="${xs(n-1)+7}" y="${lastY+4}" fill="#ddd" font-size="11" font-family="DM Sans" font-weight="600">${lastVal}kg</text>
   </svg>`;
 }
 
-function renderWeekCompare(sessions) {
-  const el = document.getElementById('weekCompare');
+function renderRealVsPrescribed(sessions) {
+  const el = document.getElementById('realVsPrescribed');
   if(!el) return;
-  const thisWS = weekStart(todayISO());
-  const prevDate = new Date(thisWS+'T12:00:00');
-  prevDate.setDate(prevDate.getDate()-7);
-  const prevWS = prevDate.toISOString().split('T')[0];
-
-  const getWeekMax = (ws) => {
-    const result = {};
-    sessions.filter(s=>weekStart(s.date)===ws).forEach(s=>{
-      for(const [lift, getter] of Object.entries(SBD_KEYS)) {
-        const max = getMaxWeight(getter(s));
-        if(max && (!result[lift]||max>result[lift])) result[lift]=max;
-      }
-    });
-    return result;
-  };
-
-  const thisW = getWeekMax(thisWS);
-  const prevW = getWeekMax(prevWS);
-  const lifts = ['Squat','Bench Press','Deadlift'];
-  const hasData = lifts.some(l=>thisW[l]||prevW[l]);
-
-  if(!hasData) { el.innerHTML=`<div class="pr-empty">No data yet</div>`; return; }
-
+  const pw = getCurrentProgWeek();
+  if(!pw) { el.innerHTML = '<div class="rvp-empty">Program not active</div>'; return; }
+  const ws = weekStart(todayISO());
+  const weekSess = sessions.filter(s => weekStart(s.date) === ws);
+  const lifts = [
+    {name:'Squat', prescribed: pw.sq, getter: SBD_KEYS['Squat']},
+    {name:'Bench Press', prescribed: pw.bp, getter: SBD_KEYS['Bench Press']},
+    {name:'Deadlift', prescribed: pw.dl, getter: SBD_KEYS['Deadlift']},
+  ];
+  if(!weekSess.length) {
+    el.innerHTML = '<div class="rvp-empty" style="padding:8px 0;">No data this week — log a session first</div>';
+    return;
+  }
   el.innerHTML = lifts.map(l => {
-    const t = thisW[l], p = prevW[l];
-    let delta = '', deltaClass = 'same';
-    if(t && p) { const d = t-p; delta = (d>0?'+':'')+d+'kg'; deltaClass = d>0?'up':d<0?'down':'same'; }
-    return `<div class="wc-row">
-      <div class="wc-lift">${l}</div>
-      <div class="wc-vals">
-        <div class="wc-last">${p?p+'kg':'—'}</div>
-        <div style="color:var(--text3);font-size:11px;">→</div>
-        <div class="wc-this">${t?t:'—'}<span style="font-size:11px;color:var(--text3)">${t?' kg':''}</span></div>
-        ${delta?`<div class="wc-delta ${deltaClass}">${delta}</div>`:''}
+    let realMax = 0;
+    weekSess.forEach(s => {
+      l.getter(s).forEach(ex => {
+        ex.sets.forEach(st => {
+          const w = parseFloat(st.weight)||0;
+          if(w > realMax) realMax = w;
+        });
+      });
+    });
+    if(!realMax) return `<div class="rvp-row"><div class="rvp-lift">${l.name}</div><div class="rvp-empty">no data</div></div>`;
+    const diff = realMax - l.prescribed;
+    const cls = diff > 0 ? 'up' : diff < 0 ? 'down' : 'same';
+    const sign = diff > 0 ? '+' : '';
+    return `<div class="rvp-row">
+      <div><div class="rvp-lift">${l.name}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">Prescribed: ${l.prescribed}kg</div></div>
+      <div class="rvp-vals">
+        <div class="rvp-real">${realMax}<span style="font-size:13px;color:var(--text3)"> kg</span></div>
+        <div class="rvp-delta ${cls}">${sign}${diff}kg</div>
       </div>
     </div>`;
   }).join('');
+}
+
+function renderBlockCompare(sessions) {
+  const el = document.getElementById('blockCompare');
+  if(!el) return;
+  const pw = getCurrentProgWeek();
+  if(!pw || pw.block < 2) {
+    el.innerHTML = '<div style="font-size:13px;color:var(--text3);padding:4px 0;">Available from Block 2</div>';
+    return;
+  }
+  // Get best topset per lift per block
+  const blockBest = {};
+  sessions.forEach(s => {
+    const sw = getProgWeekForDate(s.date);
+    if(!sw) return;
+    const b = sw.block;
+    if(!blockBest[b]) blockBest[b] = {sq:0, bp:0, dl:0};
+    [['sq','Squat'],['bp','Bench Press'],['dl','Deadlift']].forEach(([k,liftKey]) => {
+      SBD_KEYS[liftKey](s).forEach(ex => {
+        ex.sets.forEach(st => {
+          const w = parseFloat(st.weight)||0;
+          if(w > blockBest[b][k]) blockBest[b][k] = w;
+        });
+      });
+    });
+  });
+  const curBlock = pw.block;
+  const prevBlock = curBlock - 1;
+  const cur = blockBest[curBlock] || {};
+  const prev = blockBest[prevBlock] || {};
+  const lifts = [{k:'sq',n:'Squat'},{k:'bp',n:'Bench Press'},{k:'dl',n:'Deadlift'}];
+  const hasAny = lifts.some(l => cur[l.k] || prev[l.k]);
+  if(!hasAny) {
+    el.innerHTML = '<div style="font-size:13px;color:var(--text3);padding:4px 0;">Not enough data yet</div>';
+    return;
+  }
+  el.innerHTML = `<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text3);margin-bottom:8px;"><span>Block ${prevBlock}</span><span>→ Block ${curBlock}</span></div>`
+    + lifts.map(l => {
+      const p = prev[l.k]||0, c = cur[l.k]||0;
+      if(!p && !c) return '';
+      const diff = c - p;
+      const cls = diff > 0 ? 'up' : diff < 0 ? 'down' : 'same';
+      const sign = diff > 0 ? '+' : '';
+      return `<div class="blkcmp-row">
+        <div class="blkcmp-lift">${l.n}</div>
+        <div class="blkcmp-vals">
+          <div class="blkcmp-prev">${p?p+'kg':'—'}</div>
+          <div style="color:var(--text3);font-size:11px;">→</div>
+          <div class="blkcmp-cur">${c||'—'}<span style="font-size:12px;color:var(--text3)">${c?' kg':''}</span></div>
+          ${diff ? `<div class="blkcmp-delta ${cls}">${sign}${diff}kg</div>` : ''}
+        </div>
+      </div>`;
+    }).join('');
 }
 
 
