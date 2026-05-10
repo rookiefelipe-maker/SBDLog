@@ -2238,6 +2238,8 @@ function saveEditSess() {
   renderDash();
   renderStats();
 }
+
+function navToStats(subview) {
   // activate Stats tab
   document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
   document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
