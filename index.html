@@ -225,7 +225,19 @@ html,body{height:100%;background:var(--bg0);color:var(--text1);font-family:'DM S
 .btn-red:active{background:#3a0a0a;}
 .confirm-inp{background:var(--bg3);border:1px solid var(--bg4);border-radius:var(--rs);color:var(--text1);font-family:'DM Sans',sans-serif;font-size:14px;padding:10px 12px;width:100%;outline:none;margin-top:8px;}
 .confirm-inp:focus{border-color:var(--bg5);}
-/* PROGRAM WEEK CARD */
+/* EDIT SESSION */
+.esex{margin-bottom:18px;}
+.esex-name{font-size:13px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
+.eset-row{display:grid;grid-template-columns:28px 1fr 1fr auto;gap:6px;align-items:center;margin-bottom:6px;}
+.eset-num{font-size:12px;color:var(--text3);text-align:center;}
+.eset-inp{background:var(--bg3);border:1px solid var(--bg4);border-radius:var(--rs);padding:8px 10px;color:var(--text1);font-family:'DM Sans',sans-serif;font-size:14px;width:100%;text-align:center;}
+.eset-inp:focus{outline:none;border-color:var(--text3);}
+.eset-del{background:none;border:none;color:var(--text3);font-size:16px;cursor:pointer;padding:4px 6px;border-radius:4px;}
+.eset-del:active{color:#cc2222;}
+.eset-add{background:none;border:1px dashed var(--bg4);color:var(--text3);border-radius:var(--rs);padding:6px;font-size:12px;cursor:pointer;width:100%;margin-top:2px;}
+.eset-add:active{border-color:var(--text3);}
+.eset-hdr{display:grid;grid-template-columns:28px 1fr 1fr auto;gap:6px;margin-bottom:4px;}
+.eset-hdr span{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;text-align:center;}
 .prog-week-hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
 .prog-week-num{font-family:'Bebas Neue',sans-serif;font-size:48px;line-height:1;color:var(--white);}
 .prog-week-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:var(--text3);margin-top:4px;}
@@ -335,6 +347,15 @@ if ('serviceWorker' in navigator) {
     <div class="view active" id="v-dash">
       <div class="slabel">Program week</div>
       <div id="dashProgWeek" style="display:flex;flex-direction:column;gap:8px;"></div>
+
+      <div class="slabel">Activity</div>
+      <div class="card" style="padding:14px 16px;">
+        <div class="freq-grid" id="dashFreqGrid"></div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:10px;">
+          <div style="font-size:12px;color:var(--text3);">Streak: <span id="dashStreakNum" style="color:var(--white);font-weight:600;">0</span> days</div>
+          <div style="font-size:12px;color:var(--text3);" id="dashStreakBest"></div>
+        </div>
+      </div>
 
       <div class="slabel">Real 1RM</div>
       <div class="card">
@@ -539,6 +560,22 @@ if ('serviceWorker' in navigator) {
 </div>
 
 <!-- MODAL: Goal Total -->
+<!-- MODAL: Edit Session -->
+<div class="moverlay" id="mEditSess">
+  <div class="modal" style="max-height:85vh;overflow-y:auto;">
+    <div class="mhandle"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <div class="mtitle" style="margin-bottom:0;" id="editSessTitle">Edit Session</div>
+      <div style="font-size:12px;color:var(--text3);" id="editSessDate"></div>
+    </div>
+    <div id="editSessBody"></div>
+    <div class="mactions" style="margin-top:16px;">
+      <button class="btn btn-ghost btn-sm" style="flex:1" onclick="clickFeedback(); closeModal('mEditSess')">Cancel</button>
+      <button class="btn btn-sm" style="flex:2" onclick="clickFeedback(); saveEditSess()">Save changes</button>
+    </div>
+  </div>
+</div>
+
 <div class="moverlay" id="mGoal">
   <div class="modal">
     <div class="mhandle"></div>
@@ -804,9 +841,49 @@ function renderDashProgWeek() {
     </div>`;
 }
 
+// ── DASHBOARD HEATMAP ─────────────────────────────────────────
+function renderDashHeatmap() {
+  const grid = document.getElementById('dashFreqGrid');
+  if(!grid) return;
+  const {sessions} = getData();
+  const trained = new Set(sessions.map(s => s.date));
+  const dayMs = 86400000;
+  const today = new Date(todayISO() + 'T12:00:00');
+  grid.innerHTML = '';
+  for(let i = 55; i >= 0; i--) {
+    const dd = new Date(today.getTime() - i * dayMs);
+    const iso = dd.toISOString().split('T')[0];
+    const el = document.createElement('div');
+    el.className = 'fday' + (trained.has(iso) ? ' on' : '') + (iso === todayISO() ? ' today' : '');
+    grid.appendChild(el);
+  }
+  // Streak
+  const dates = [...trained].sort((a,b) => b.localeCompare(a));
+  let streak = 0;
+  let d = new Date(todayISO() + 'T12:00:00');
+  for(let i = 0; i < 365; i++) {
+    const iso = d.toISOString().split('T')[0];
+    if(trained.has(iso)) { streak++; d.setTime(d.getTime() - dayMs); }
+    else if(i === 0) { d.setTime(d.getTime() - dayMs); }
+    else break;
+  }
+  let best = 0, temp = 0, last = null;
+  dates.slice().reverse().forEach(iso => {
+    if(!last) temp = 1;
+    else { const diff = (new Date(iso+'T12:00:00') - new Date(last+'T12:00:00')) / dayMs; temp = diff === 1 ? temp + 1 : 1; }
+    if(temp > best) best = temp;
+    last = iso;
+  });
+  const sn = document.getElementById('dashStreakNum');
+  const sb = document.getElementById('dashStreakBest');
+  if(sn) sn.textContent = streak;
+  if(sb) sb.textContent = best > streak ? `Best: ${best} days` : '';
+}
+
 // ── DASHBOARD ─────────────────────────────────────────────────
 function renderDash() {
   renderDashProgWeek();
+  renderDashHeatmap();
   const {oneRMs, sessions} = getData();
   const grid = document.getElementById('onermGrid');
   const lifts = [{k:'sq',n:'Squat'},{k:'bp',n:'Bench'},{k:'dl',n:'Deadlift'}];
@@ -2054,7 +2131,10 @@ function renderHist() {
               ${ex.sets.map((st,i)=>{const rpeEmoji=st.rpe==='easy'?'🟢':st.rpe==='medium'?'🟡':st.rpe==='hard'?'🔴':'';return `<tr><td>${i+1}</td><td>${st.weight} kg</td><td>${st.reps}</td>${ex.topSet?`<td class="e1">${e1rm(parseFloat(st.weight),parseInt(st.reps))} kg</td>`:''}<td>${rpeEmoji}</td></tr>`;}).join('')}
             </table>
           </div>`).join('')}
-        <button class="btn-danger" onclick="clickFeedback(); deleteSess('${s.id}')">Delete session</button>
+        <div style="display:flex;gap:8px;margin-top:10px;">
+          <button class="btn btn-ghost btn-sm" style="flex:1;" onclick="clickFeedback(); openEditSess('${s.id}')">Edit session</button>
+          <button class="btn-danger" onclick="clickFeedback(); deleteSess('${s.id}')">Delete</button>
+        </div>
       </div>`;
     list.appendChild(card);
   });
@@ -2069,7 +2149,95 @@ function deleteSess(id) {
   renderStats();
 }
 
-function navToStats(subview) {
+let editingSessId = null;
+
+function openEditSess(id) {
+  const {sessions} = getData();
+  const s = sessions.find(x => x.id === id);
+  if(!s) return;
+  editingSessId = id;
+  document.getElementById('editSessTitle').textContent = s.tplName || 'Session';
+  document.getElementById('editSessDate').textContent = fmtDate(s.date);
+  const body = document.getElementById('editSessBody');
+  body.innerHTML = s.exercises.map((ex, ei) => `
+    <div class="esex" data-ei="${ei}">
+      <div class="esex-name">${ex.name}</div>
+      <div class="eset-hdr"><span></span><span>Weight kg</span><span>Reps</span><span></span></div>
+      <div class="eset-rows">
+        ${ex.sets.map((st, si) => `
+          <div class="eset-row" data-si="${si}">
+            <div class="eset-num">${si+1}</div>
+            <input class="eset-inp eset-w" type="number" value="${st.weight}" inputmode="decimal" step="0.5" placeholder="kg">
+            <input class="eset-inp eset-r" type="number" value="${st.reps}" inputmode="numeric" placeholder="reps">
+            <button class="eset-del" onclick="removeEditSet(this)" title="Remove set">✕</button>
+          </div>`).join('')}
+      </div>
+      <button class="eset-add" onclick="addEditSet(this)">+ add set</button>
+    </div>`).join('');
+  openModal('mEditSess');
+}
+
+function addEditSet(btn) {
+  const esex = btn.closest('.esex');
+  const rows = esex.querySelector('.eset-rows');
+  const existing = rows.querySelectorAll('.eset-row');
+  const si = existing.length;
+  // Copy last set's weight as default
+  const lastW = si > 0 ? existing[si-1].querySelector('.eset-w').value : '';
+  const div = document.createElement('div');
+  div.className = 'eset-row';
+  div.dataset.si = si;
+  div.innerHTML = `
+    <div class="eset-num">${si+1}</div>
+    <input class="eset-inp eset-w" type="number" value="${lastW}" inputmode="decimal" step="0.5" placeholder="kg">
+    <input class="eset-inp eset-r" type="number" value="" inputmode="numeric" placeholder="reps">
+    <button class="eset-del" onclick="removeEditSet(this)" title="Remove set">✕</button>`;
+  rows.appendChild(div);
+  // Renumber
+  renumberEditSets(rows);
+}
+
+function removeEditSet(btn) {
+  const row = btn.closest('.eset-row');
+  const rows = row.closest('.eset-rows');
+  row.remove();
+  renumberEditSets(rows);
+}
+
+function renumberEditSets(rows) {
+  rows.querySelectorAll('.eset-row').forEach((r, i) => {
+    r.querySelector('.eset-num').textContent = i + 1;
+  });
+}
+
+function saveEditSess() {
+  if(!editingSessId) return;
+  let {sessions} = getData();
+  const sIdx = sessions.findIndex(x => x.id === editingSessId);
+  if(sIdx === -1) return;
+  const s = JSON.parse(JSON.stringify(sessions[sIdx]));
+  // Read all exercises from modal
+  document.querySelectorAll('#editSessBody .esex').forEach((exEl, ei) => {
+    const rows = exEl.querySelectorAll('.eset-row');
+    const newSets = [];
+    rows.forEach(row => {
+      const w = row.querySelector('.eset-w').value.trim();
+      const r = row.querySelector('.eset-r').value.trim();
+      if(w || r) {
+        // Preserve original RPE if set existed, else blank
+        const origSet = s.exercises[ei] && s.exercises[ei].sets[newSets.length];
+        newSets.push({ weight: w, reps: r, rpe: origSet ? origSet.rpe : '' });
+      }
+    });
+    if(s.exercises[ei]) s.exercises[ei].sets = newSets;
+  });
+  sessions[sIdx] = s;
+  saveSessData(sessions);
+  closeModal('mEditSess');
+  renderHist();
+  renderDash();
+  renderStats();
+}
   // activate Stats tab
   document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
   document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
