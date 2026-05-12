@@ -811,6 +811,7 @@ function renderDashProgWeek() {
   const pw = getCurrentProgWeek();
   if(!pw) { el.innerHTML = '<div style="font-size:13px;color:var(--text3);padding:4px 0;">Program starts May 11</div>'; return; }
   const phaseClass = pw.phase==='deload'?'deload':pw.phase==='test'?'test':'';
+  const pct = getProgramProgressPct();
   el.innerHTML = `
     <div class="card" style="padding:14px 16px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
@@ -819,6 +820,10 @@ function renderDashProgWeek() {
           <span style="font-size:12px;color:var(--text3);margin-left:8px;">${pw.dates}</span>
         </div>
         <span class="prog-phase-badge ${phaseClass}">${pw.phaseLabel}</span>
+      </div>
+      <div class="prog-bar-wrap">
+        <div class="prog-bar-label"><span>Program progress</span><span>${pct}%</span></div>
+        <div class="prog-bar-track"><div class="prog-bar-fill" style="width:${pct}%"></div></div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;">
         <div style="background:var(--bg3);border-radius:var(--rs);padding:8px 10px;">
@@ -837,7 +842,6 @@ function renderDashProgWeek() {
           <div style="font-size:10px;color:var(--text3);">${pw.dl_pct}% · bo ${pw.dl_bo}</div>
         </div>
       </div>
-      <div style="font-size:12px;color:var(--text3);line-height:1.5;">${pw.note}</div>
     </div>`;
 }
 
@@ -1919,6 +1923,7 @@ function finishSession() {
   const hasData = activeSession.exercises.some(ex => ex.sets.length > 0);
   if(!hasData) { clearActiveSession(); activeSession = null; closeModal('mSess'); setTimeout(() => renderTrain(), 300); return; }
   let {sessions} = getData();
+  const priorSessions = sessions.slice();
   activeSession.endTime = new Date().getTime();
   const newSession = {
     id: Date.now().toString(),
@@ -1929,6 +1934,7 @@ function finishSession() {
     endTime: activeSession.endTime,
     exercises: activeSession.exercises.map(ex => ({name: ex.name, topSet: ex.topSet||false, sets: ex.sets}))
   };
+  const newBasicPRs = getBasicWeightPRsForSession(newSession, priorSessions);
   sessions.push(newSession);
   saveSessData(sessions);
   
@@ -1946,7 +1952,7 @@ function finishSession() {
   renderStats();
   // Show celebration modal with PRs
   setTimeout(() => {
-    showFinishSessionModal(newSession, sessions);
+    showFinishSessionModal(newSession, sessions, newBasicPRs);
     renderTrain();
   }, 300);
 }
@@ -2300,7 +2306,7 @@ function getCurrentProgWeek() {
   const msPerWeek = 7*24*60*60*1000;
   const idx = Math.floor((today - PROG_START) / msPerWeek);
   if(idx < 0 || idx >= PROG_WEEKS.length) return null;
-  return PROG_WEEKS[idx];
+  return getAdjustedProgWeek(PROG_WEEKS[idx]);
 }
 
 function getProgWeekForDate(isoDate) {
@@ -2317,6 +2323,71 @@ const SBD_KEYS = {
   'Bench Press': s => s.exercises.filter(e=>e.name.toLowerCase().includes('bench') && !e.name.toLowerCase().includes('incline') && !e.name.toLowerCase().includes('close') && !e.name.toLowerCase().includes('light')),
   'Deadlift': s => s.exercises.filter(e=>e.name.toLowerCase().includes('deadlift') && !e.name.toLowerCase().includes('romanian') && !e.name.toLowerCase().includes('rdl') && !e.name.toLowerCase().includes('deficit') && !e.name.toLowerCase().includes('pause')),
 };
+
+const PROG_BASE_PCTS = {sq:0.70, bp:0.75, dl:0.725};
+const SBD_PROG_MAP = {'Squat':'sq','Bench Press':'bp','Deadlift':'dl'};
+
+function bestBasicSetInSession(session, liftName) {
+  const getter = SBD_KEYS[liftName];
+  let best = null;
+  if(!session || !getter) return null;
+  getter(session).forEach(ex => {
+    ex.sets.forEach(st => {
+      const w = parseFloat(st.weight)||0;
+      const r = parseInt(st.reps)||0;
+      if(w > 0 && r > 0 && (!best || w > best.w || (w === best.w && r > best.r))) {
+        best = {w, r, date: session.date, exercise: ex.name};
+      }
+    });
+  });
+  return best;
+}
+
+function getBasicWeightPRsForSession(session, historySessions) {
+  const prs = [];
+  ['Squat','Bench Press','Deadlift'].forEach(lift => {
+    const current = bestBasicSetInSession(session, lift);
+    if(!current) return;
+    let prev = null;
+    (historySessions || []).forEach(s => {
+      const candidate = bestBasicSetInSession(s, lift);
+      if(candidate && (!prev || candidate.w > prev.w || (candidate.w === prev.w && candidate.r > prev.r))) prev = candidate;
+    });
+    if(!prev || current.w > prev.w || (current.w === prev.w && current.r > prev.r)) {
+      prs.push({lift, weight: current.w, reps: current.r, previous: prev});
+    }
+  });
+  return prs;
+}
+
+function getProgramProgressPct() {
+  const today = new Date(todayISO() + 'T12:00:00');
+  const totalDays = PROG_WEEKS.length * 7;
+  const elapsedDays = Math.floor((today - PROG_START) / 86400000) + 1;
+  return Math.max(0, Math.min(100, Math.round((elapsedDays / totalDays) * 100)));
+}
+
+function getAdjustedProgWeek(rawPw) {
+  if(!rawPw) return null;
+  const {sessions} = getData();
+  const adjusted = {...rawPw};
+  ['Squat','Bench Press','Deadlift'].forEach(lift => {
+    const key = SBD_PROG_MAP[lift];
+    const first = sessions
+      .filter(s => new Date((s.date || todayISO()) + 'T12:00:00') >= PROG_START)
+      .sort((a,b) => (a.date || '').localeCompare(b.date || ''))
+      .map(s => bestBasicSetInSession(s, lift))
+      .find(Boolean);
+    const basePct = PROG_BASE_PCTS[key];
+    if(first && basePct) {
+      const inferredRM = first.w / basePct;
+      const weekPct = (rawPw[key + '_pct'] || Math.round(basePct * 100)) / 100;
+      adjusted[key] = r5(inferredRM * weekPct);
+      adjusted[key + '_bo'] = r5(adjusted[key] * 0.90);
+    }
+  });
+  return adjusted;
+}
 
 function getMaxWeight(exercises) {
   let max = 0;
@@ -2412,7 +2483,7 @@ function renderProgWeekCard() {
     return;
   }
   const totalWeeks = 32;
-  const pct = Math.round(((pw.wnum - 2) / totalWeeks) * 100);
+  const pct = getProgramProgressPct();
   const phaseClass = pw.phase === 'deload' ? 'deload' : pw.phase === 'test' ? 'test' : '';
   el.innerHTML = `
     <div class="stitle">Program week</div>
@@ -2449,8 +2520,7 @@ function renderProgWeekCard() {
         <div class="prog-lift-bo">B-off: ${pw.dl_bo}kg</div>
         <div class="prog-lift-pct">${pw.dl_pct}%</div>
       </div>
-    </div>
-    <div class="prog-note">${pw.note}</div>`;
+    </div>`;
 }
 
 function renderE1RMCharts(sessions) {
@@ -2497,7 +2567,7 @@ function renderE1RMCharts(sessions) {
 
 function drawE1RMChart(wrap, values, labels, color, targetRM) {
   wrap.innerHTML = '';
-  const W = wrap.clientWidth||320, H = 160, padL=38, padR=14, padT=16, padB=22;
+  const W = wrap.clientWidth||320, H = 160, padL=38, padR=58, padT=16, padB=22;
   const minV = Math.min(...values)*0.97;
   const maxV = Math.max(Math.max(...values)*1.02, targetRM*1.05);
   const range = maxV - minV || 1;
@@ -2513,6 +2583,9 @@ function drawE1RMChart(wrap, values, labels, color, targetRM) {
   const lastVal = values[n-1];
   const lastY = ys(lastVal);
   const uid = color.replace('#','');
+  const lastLabelX = xs(n-1) + 7;
+  const lastLabelAnchor = lastLabelX > W - 42 ? 'end' : 'start';
+  const lastLabelSafeX = lastLabelAnchor === 'end' ? W - 6 : lastLabelX;
   wrap.innerHTML = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
     <defs>
       <linearGradient id="lg${uid}" x1="0" y1="0" x2="0" y2="1">
@@ -2527,7 +2600,7 @@ function drawE1RMChart(wrap, values, labels, color, targetRM) {
     <polygon points="${fill}" fill="url(#lg${uid})"/>
     <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
     <circle cx="${xs(n-1)}" cy="${lastY}" r="4" fill="${color}"/>
-    <text x="${xs(n-1)+7}" y="${lastY+4}" fill="#ddd" font-size="11" font-family="DM Sans" font-weight="600">${lastVal}kg</text>
+    <text x="${lastLabelSafeX}" y="${lastY+4}" fill="#ddd" font-size="11" font-family="DM Sans" font-weight="600" text-anchor="${lastLabelAnchor}">${lastVal}kg</text>
   </svg>`;
 }
 
@@ -2910,7 +2983,7 @@ function playCelebrationSound() {
   } catch(e) { /* silent fail if audio not supported */ }
 }
 
-function showFinishSessionModal(session, sessions) {
+function showFinishSessionModal(session, sessions, newBasicPRs=[]) {
   // Add celebration CSS if not present
   if(!document.getElementById('celebrationStyles')) {
     const style = document.createElement('style');
@@ -2941,81 +3014,130 @@ function showFinishSessionModal(session, sessions) {
   const mins = durationMins % 60;
   const durationText = hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
 
-  // Get PRs only for basics performed in this session (with weight & reps)
-  const prs = {};
   const performedLifts = [];
   ['Squat', 'Bench Press', 'Deadlift'].forEach(liftKey => {
-    const getter = SBD_KEYS[liftKey];
-    let bestInSession = null;
-    getter(session).forEach(ex => {
-      ex.sets.forEach(st => {
-        const w = parseFloat(st.weight)||0;
-        const r = parseInt(st.reps)||0;
-        if(w > 0 && r > 0) {
-          if(!bestInSession || w > bestInSession.w || (w === bestInSession.w && r > bestInSession.r))
-            bestInSession = {w, r};
-        }
-      });
-    });
-    if(bestInSession) {
-      prs[liftKey] = bestInSession;
-      performedLifts.push(liftKey);
-    }
+    const best = bestBasicSetInSession(session, liftKey);
+    if(best) performedLifts.push({lift: liftKey, ...best});
   });
 
-  // Get all-time PRs to compare
-  const allTimePrs = getPRs(sessions);
-  const hasAnyNewPR = performedLifts.some(lift => {
-    const pr = prs[lift]; const atp = allTimePrs[lift];
-    return pr && atp && (pr.w > atp.w || (pr.w === atp.w && pr.r > atp.r));
-  });
-
-  // Build PR rows only for performed lifts
   const prRowsHtml = performedLifts.length === 0
     ? `<div style="font-size:13px;color:var(--text3);padding:10px 0;">No básicos registrados esta sesión</div>`
-    : performedLifts.map(lift => {
-        const pr = prs[lift];
-        const allTimePr = allTimePrs[lift];
-        const isNewPR = pr && allTimePr && (pr.w > allTimePr.w || (pr.w === allTimePr.w && pr.r > allTimePr.r));
-        const borderColor = isNewPR ? '#4caf50' : 'var(--bg4)';
-        const valColor = isNewPR ? '#4caf50' : 'var(--white)';
-        const badge = isNewPR ? `<span style="font-size:9px;background:#4caf50;color:#000;padding:2px 5px;border-radius:3px;font-weight:700;margin-left:6px;vertical-align:middle;">NEW PR</span>` : '';
-        const animStyle = isNewPR ? 'animation:newPrPulse 1.5s ease-in-out infinite;' : '';
-        return `<div style="background:var(--bg0);border:1px solid ${borderColor};border-radius:8px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;${animStyle}">
-          <div style="font-size:12px;color:var(--text3);font-weight:600;">${lift}</div>
+    : performedLifts.map(pr => `<div style="background:var(--bg0);border:1px solid var(--bg4);border-radius:8px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;">
+          <div style="font-size:12px;color:var(--text3);font-weight:600;">${pr.lift}</div>
           <div style="display:flex;align-items:center;">
-            <span style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:${valColor};letter-spacing:0.5px;">${pr.w}kg × ${pr.r}</span>${badge}
+            <span style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--white);letter-spacing:0.5px;">${pr.w}kg × ${pr.r}</span>
           </div>
-        </div>`;
-      }).join('');
+        </div>`).join('');
 
   const overlay = document.createElement('div');
   overlay.id = 'celebrationOverlay';
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;animation:fadeIn 0.3s ease-out;';
 
   overlay.innerHTML = `
-    <div style="background:var(--bg2);border:1.5px solid ${hasAnyNewPR ? '#4caf50' : '#cc2222'};border-radius:18px;padding:24px 20px 20px;width:100%;max-width:340px;text-align:center;position:relative;animation:slideUp 0.45s cubic-bezier(0.34,1.56,0.64,1);">
-      <button onclick="document.getElementById('celebrationOverlay').remove()" style="position:absolute;top:10px;right:12px;background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer;line-height:1;padding:4px;">✕</button>
+    <div style="background:var(--bg2);border:1.5px solid #cc2222;border-radius:18px;padding:24px 20px 20px;width:100%;max-width:340px;text-align:center;position:relative;animation:slideUp 0.45s cubic-bezier(0.34,1.56,0.64,1);">
+      <button onclick="closeFinishSessionModal()" style="position:absolute;top:10px;right:12px;background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer;line-height:1;padding:4px;">✕</button>
 
-      <div style="font-size:56px;margin-bottom:8px;display:inline-block;animation:trophyBounce 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.1s both;">${hasAnyNewPR ? '🏆' : '💪'}</div>
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:2px;color:var(--white);line-height:1;">${hasAnyNewPR ? 'NUEVO PR!' : 'SESIÓN COMPLETA'}</div>
-      <div style="font-size:13px;color:var(--text3);margin-top:4px;margin-bottom:16px;">Duración: <span style="color:var(--text2);font-weight:600;">${durationText}</span></div>
+      <div style="font-size:56px;margin-bottom:8px;display:inline-block;animation:trophyBounce 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.1s both;">💪</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:2px;color:var(--white);line-height:1;">SESSION FINISHED</div>
+      <div style="font-size:13px;color:var(--text3);margin-top:4px;margin-bottom:16px;">Duration: <span style="color:var(--text2);font-weight:600;">${durationText}</span></div>
 
-      ${performedLifts.length > 0 ? `<div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;text-align:left;">Básicos esta sesión</div>` : ''}
+      ${performedLifts.length > 0 ? `<div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;text-align:left;">Basic lifts this session</div>` : ''}
       <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:18px;">${prRowsHtml}</div>
 
       <div style="display:flex;gap:8px;">
         <button onclick="clickFeedback();exportData();" style="background:var(--bg3);color:var(--text2);border:1px solid var(--bg4);border-radius:10px;padding:13px 14px;flex:1;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;">⬇ Export</button>
-        <button onclick="document.getElementById('celebrationOverlay').remove()" style="background:var(--white);color:var(--bg0);border:none;border-radius:10px;padding:13px 20px;flex:2;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;cursor:pointer;">Listo</button>
+        <button onclick="closeFinishSessionModal()" style="background:var(--white);color:var(--bg0);border:none;border-radius:10px;padding:13px 20px;flex:2;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;cursor:pointer;">Done!</button>
       </div>
     </div>
   `;
 
   document.body.appendChild(overlay);
 
+  overlay.dataset.prs = JSON.stringify(newBasicPRs || []);
+
   // Play sound + confetti
   playCelebrationSound();
   createConfetti();
+}
+
+function closeFinishSessionModal() {
+  const overlay = document.getElementById('celebrationOverlay');
+  const prs = overlay ? JSON.parse(overlay.dataset.prs || '[]') : [];
+  if(overlay) overlay.remove();
+  if(prs.length) setTimeout(() => showNextPRPopup(prs, 0), 180);
+}
+
+function playPRFanfare() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const now = ctx.currentTime;
+    const master = ctx.createGain();
+    master.gain.setValueAtTime(0.28, now);
+    master.connect(ctx.destination);
+
+    // Bright, brassy victory phrase: short attacks + saw/square harmonics.
+    const notes = [523.25, 659.25, 783.99, 1046.5, 783.99, 1046.5, 1318.51];
+    notes.forEach((freq, i) => {
+      const t = now + i * 0.115;
+      ['sawtooth', 'square'].forEach((type, j) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        const filter = ctx.createBiquadFilter();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq * (j ? 2.0 : 1.0), t);
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(1100 + (i * 120), t);
+        filter.Q.setValueAtTime(6, t);
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(master);
+        gain.gain.setValueAtTime(0.0001, t);
+        gain.gain.exponentialRampToValueAtTime(j ? 0.045 : 0.16, t + 0.018);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.19);
+        osc.start(t);
+        osc.stop(t + 0.22);
+      });
+    });
+
+    // Final held chord.
+    [523.25, 659.25, 783.99, 1046.5].forEach((freq) => {
+      const t = now + 0.86;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(freq, t);
+      osc.connect(gain);
+      gain.connect(master);
+      gain.gain.setValueAtTime(0.0001, t);
+      gain.gain.exponentialRampToValueAtTime(0.07, t + 0.03);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.55);
+      osc.start(t);
+      osc.stop(t + 0.6);
+    });
+
+    if(navigator.vibrate) navigator.vibrate([80, 40, 120, 40, 180]);
+  } catch(e) {}
+}
+
+function showNextPRPopup(prs, idx) {
+  if(idx >= prs.length) return;
+  const pr = prs[idx];
+  playPRFanfare();
+  createConfetti();
+  const overlay = document.createElement('div');
+  overlay.id = 'prOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:1100;display:flex;align-items:center;justify-content:center;padding:20px;animation:fadeIn 0.25s ease-out;';
+  overlay.innerHTML = `
+    <div style="background:var(--bg2);border:1.5px solid #4caf50;border-radius:18px;padding:26px 20px 22px;width:100%;max-width:340px;text-align:center;position:relative;animation:slideUp 0.42s cubic-bezier(0.34,1.56,0.64,1);">
+      <button onclick="clickFeedback();document.getElementById('prOverlay').remove();showNextPRPopup(${JSON.stringify(prs).replace(/"/g,'&quot;')}, ${idx + 1});" style="position:absolute;top:10px;right:12px;background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer;line-height:1;padding:4px;">✕</button>
+      <div style="font-size:54px;margin-bottom:8px;">🏆</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:2px;color:var(--white);line-height:1;">NEW PR</div>
+      <div style="font-size:13px;color:var(--text3);margin-top:6px;text-transform:uppercase;letter-spacing:1px;">${pr.lift}</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:58px;color:#4caf50;line-height:1;margin-top:10px;">${pr.weight}<span style="font-size:20px;color:var(--text3);">kg</span></div>
+      <div style="font-size:16px;color:var(--text2);margin-top:2px;">${pr.reps} reps</div>
+      ${prs.length > 1 ? `<div style="font-size:12px;color:var(--text3);margin-top:14px;">${idx + 1} of ${prs.length}</div>` : ''}
+    </div>`;
+  document.body.appendChild(overlay);
 }
 
 function createConfetti() {
