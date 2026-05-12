@@ -1937,9 +1937,6 @@ function finishSession() {
   if(activeSession.id) delete drafts[activeSession.id];
   LS.set('mx_draft_sess', drafts);
 
-  // Auto-backup: download a JSON copy when the session finishes
-  exportData();
-
   // Clear persisted active session
   clearActiveSession();
   activeSession = null;
@@ -2880,16 +2877,73 @@ function formatTime(timestamp) {
   return d.toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit', hour12: true}).replace(/am|pm/, m => m.toUpperCase());
 }
 
+function playCelebrationSound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const notes = [523.25, 659.25, 783.99, 1046.50, 1318.51]; // C5, E5, G5, C6, E6
+    notes.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, ctx.currentTime + i * 0.12);
+      gain.gain.setValueAtTime(0, ctx.currentTime + i * 0.12);
+      gain.gain.linearRampToValueAtTime(0.18, ctx.currentTime + i * 0.12 + 0.04);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.12 + 0.4);
+      osc.start(ctx.currentTime + i * 0.12);
+      osc.stop(ctx.currentTime + i * 0.12 + 0.4);
+    });
+    // Sparkle layer: short high-pitched random bursts
+    for(let j = 0; j < 6; j++) {
+      const osc2 = ctx.createOscillator();
+      const gain2 = ctx.createGain();
+      osc2.connect(gain2);
+      gain2.connect(ctx.destination);
+      osc2.type = 'triangle';
+      osc2.frequency.setValueAtTime(1800 + Math.random() * 1200, ctx.currentTime + Math.random() * 0.7);
+      gain2.gain.setValueAtTime(0.06, ctx.currentTime + j * 0.11);
+      gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + j * 0.11 + 0.15);
+      osc2.start(ctx.currentTime + j * 0.11);
+      osc2.stop(ctx.currentTime + j * 0.11 + 0.15);
+    }
+  } catch(e) { /* silent fail if audio not supported */ }
+}
+
 function showFinishSessionModal(session, sessions) {
+  // Add celebration CSS if not present
+  if(!document.getElementById('celebrationStyles')) {
+    const style = document.createElement('style');
+    style.id = 'celebrationStyles';
+    style.textContent = `
+      @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+      @keyframes slideUp { from { transform: translateY(50px) scale(0.95); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
+      @keyframes trophyBounce { 0% { transform: scale(0) rotate(-15deg); } 60% { transform: scale(1.15) rotate(5deg); } 80% { transform: scale(0.95) rotate(-2deg); } 100% { transform: scale(1) rotate(0deg); } }
+      @keyframes confetti-fall {
+        0% { transform: translateY(0) rotate(0deg) scaleX(1); opacity: 1; }
+        50% { scaleX: 0.6; }
+        100% { transform: translateY(105vh) rotate(720deg) scaleX(0.3); opacity: 0; }
+      }
+      @keyframes confetti-sway {
+        0%, 100% { margin-left: 0; }
+        25% { margin-left: 20px; }
+        75% { margin-left: -20px; }
+      }
+      @keyframes newPrPulse { 0%,100%{box-shadow:0 0 0 0 rgba(76,175,80,0.4);} 50%{box-shadow:0 0 0 6px rgba(76,175,80,0);} }
+    `;
+    document.head.appendChild(style);
+  }
+
   // Calculate session duration
   const durationMs = session.endTime - session.startTime;
   const durationMins = Math.floor(durationMs / 60000);
   const hours = Math.floor(durationMins / 60);
   const mins = durationMins % 60;
   const durationText = hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
-  
-  // Get PRs for SBD lifts in this session
+
+  // Get PRs only for basics performed in this session (with weight & reps)
   const prs = {};
+  const performedLifts = [];
   ['Squat', 'Bench Press', 'Deadlift'].forEach(liftKey => {
     const getter = SBD_KEYS[liftKey];
     let bestInSession = null;
@@ -2903,95 +2957,103 @@ function showFinishSessionModal(session, sessions) {
         }
       });
     });
-    prs[liftKey] = bestInSession;
+    if(bestInSession) {
+      prs[liftKey] = bestInSession;
+      performedLifts.push(liftKey);
+    }
   });
-  
+
   // Get all-time PRs to compare
   const allTimePrs = getPRs(sessions);
-  
+  const hasAnyNewPR = performedLifts.some(lift => {
+    const pr = prs[lift]; const atp = allTimePrs[lift];
+    return pr && atp && (pr.w > atp.w || (pr.w === atp.w && pr.r > atp.r));
+  });
+
+  // Build PR rows only for performed lifts
+  const prRowsHtml = performedLifts.length === 0
+    ? `<div style="font-size:13px;color:var(--text3);padding:10px 0;">No básicos registrados esta sesión</div>`
+    : performedLifts.map(lift => {
+        const pr = prs[lift];
+        const allTimePr = allTimePrs[lift];
+        const isNewPR = pr && allTimePr && (pr.w > allTimePr.w || (pr.w === allTimePr.w && pr.r > allTimePr.r));
+        const borderColor = isNewPR ? '#4caf50' : 'var(--bg4)';
+        const valColor = isNewPR ? '#4caf50' : 'var(--white)';
+        const badge = isNewPR ? `<span style="font-size:9px;background:#4caf50;color:#000;padding:2px 5px;border-radius:3px;font-weight:700;margin-left:6px;vertical-align:middle;">NEW PR</span>` : '';
+        const animStyle = isNewPR ? 'animation:newPrPulse 1.5s ease-in-out infinite;' : '';
+        return `<div style="background:var(--bg0);border:1px solid ${borderColor};border-radius:8px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;${animStyle}">
+          <div style="font-size:12px;color:var(--text3);font-weight:600;">${lift}</div>
+          <div style="display:flex;align-items:center;">
+            <span style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:${valColor};letter-spacing:0.5px;">${pr.w}kg × ${pr.r}</span>${badge}
+          </div>
+        </div>`;
+      }).join('');
+
   const overlay = document.createElement('div');
-  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.95);z-index:1000;display:flex;align-items:center;justify-content:center;animation:fadeIn 0.4s ease-out;';
+  overlay.id = 'celebrationOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;animation:fadeIn 0.3s ease-out;';
+
   overlay.innerHTML = `
-    <div style="background:var(--bg2);border:2px solid #cc2222;border-radius:20px;padding:30px 25px;max-width:350px;text-align:center;position:relative;animation:slideUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);">
-      <button onclick="this.closest('div').parentElement.remove()" style="position:absolute;top:10px;right:10px;background:none;border:none;color:var(--text3);font-size:24px;cursor:pointer;width:30px;height:30px;display:flex;align-items:center;justify-content:center;">✕</button>
-      
-      <div style="font-size:80px;margin-bottom:10px;animation:bounce 0.6s ease-out 0.2s both;">🏆</div>
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:2px;color:var(--white);margin-bottom:6px;">SESSION COMPLETE</div>
-      <div style="font-size:14px;color:var(--text3);margin-bottom:20px;letter-spacing:1px;">Great work!</div>
-      
-      <div style="background:var(--bg3);border-radius:12px;padding:15px;margin-bottom:18px;">
-        <div style="font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Duration</div>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--white);letter-spacing:1px;">${durationText}</div>
+    <div style="background:var(--bg2);border:1.5px solid ${hasAnyNewPR ? '#4caf50' : '#cc2222'};border-radius:18px;padding:24px 20px 20px;width:100%;max-width:340px;text-align:center;position:relative;animation:slideUp 0.45s cubic-bezier(0.34,1.56,0.64,1);">
+      <button onclick="document.getElementById('celebrationOverlay').remove()" style="position:absolute;top:10px;right:12px;background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer;line-height:1;padding:4px;">✕</button>
+
+      <div style="font-size:56px;margin-bottom:8px;display:inline-block;animation:trophyBounce 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.1s both;">${hasAnyNewPR ? '🏆' : '💪'}</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:2px;color:var(--white);line-height:1;">${hasAnyNewPR ? 'NUEVO PR!' : 'SESIÓN COMPLETA'}</div>
+      <div style="font-size:13px;color:var(--text3);margin-top:4px;margin-bottom:16px;">Duración: <span style="color:var(--text2);font-weight:600;">${durationText}</span></div>
+
+      ${performedLifts.length > 0 ? `<div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;text-align:left;">Básicos esta sesión</div>` : ''}
+      <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:18px;">${prRowsHtml}</div>
+
+      <div style="display:flex;gap:8px;">
+        <button onclick="clickFeedback();exportData();" style="background:var(--bg3);color:var(--text2);border:1px solid var(--bg4);border-radius:10px;padding:13px 14px;flex:1;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;">⬇ Export</button>
+        <button onclick="document.getElementById('celebrationOverlay').remove()" style="background:var(--white);color:var(--bg0);border:none;border-radius:10px;padding:13px 20px;flex:2;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;cursor:pointer;">Listo</button>
       </div>
-      
-      <div style="font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">Session PRs</div>
-      <div style="display:flex;flex-direction:column;gap:8px;">
-        ${['Squat', 'Bench Press', 'Deadlift'].map(lift => {
-          const pr = prs[lift];
-          const allTimePr = allTimePrs[lift];
-          const isNewPR = pr && allTimePr && (pr.w > allTimePr.w || (pr.w === allTimePr.w && pr.r > allTimePr.r));
-          const color = isNewPR ? '#4caf50' : '#cc2222';
-          const badge = isNewPR ? ' <span style="font-size:10px;background:#4caf50;color:#000;padding:2px 6px;border-radius:3px;font-weight:700;">NEW!</span>' : '';
-          return `<div style="background:var(--bg0);border:1px solid var(--bg4);border-radius:8px;padding:10px;">
-            <div style="font-size:12px;color:var(--text3);margin-bottom:4px;font-weight:600;">${lift}</div>
-            <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:${pr ? color : 'var(--text3)'};letter-spacing:0.5px;">${pr ? `${pr.w}kg × ${pr.r}` : '—'}${badge}</div>
-          </div>`;
-        }).join('')}
-      </div>
-      
-      <button onclick="this.closest('div').parentElement.remove()" style="background:var(--white);color:var(--bg0);border:none;border-radius:10px;padding:12px 20px;width:100%;margin-top:20px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;cursor:pointer;transition:opacity 0.2s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">Done</button>
     </div>
   `;
-  
+
   document.body.appendChild(overlay);
-  
-  // Confetti animation
-  createConfetti(overlay);
-  
-  // Add animations to CSS if not already present
-  if(!document.getElementById('celebrationStyles')) {
-    const style = document.createElement('style');
-    style.id = 'celebrationStyles';
-    style.textContent = `
-      @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-      @keyframes slideUp { from { transform: translateY(60px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-      @keyframes bounce { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.2); } }
-      @keyframes confetti-fall { to { transform: translateY(100vh) rotate(360deg); opacity: 0; } }
-    `;
-    document.head.appendChild(style);
-  }
+
+  // Play sound + confetti
+  playCelebrationSound();
+  createConfetti();
 }
 
-function createConfetti(container) {
-  const confettiCount = 50;
-  for(let i = 0; i < confettiCount; i++) {
-    const conf = document.createElement('div');
-    const colors = ['#cc2222', '#fff', '#3a7bd5', '#4caf50', '#e6ac00'];
-    const size = Math.random() * 8 + 4;
+function createConfetti() {
+  const count = 80;
+  const colors = ['#cc2222','#ffffff','#3a7bd5','#4caf50','#e6ac00','#ff6b6b','#ffd93d'];
+  const shapes = ['square', 'circle', 'rect'];
+
+  for(let i = 0; i < count; i++) {
+    const el = document.createElement('div');
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    const shape = shapes[Math.floor(Math.random() * shapes.length)];
+    const size = Math.random() * 9 + 5;
+    const w = shape === 'rect' ? size * 2.2 : size;
+    const h = size;
     const left = Math.random() * 100;
-    const delay = Math.random() * 0.5;
+    const delay = Math.random() * 0.8;
     const duration = Math.random() * 2 + 2.5;
-    const rotation = Math.random() * 360;
-    
-    conf.style.cssText = `
-      position: fixed;
-      width: ${size}px;
-      height: ${size}px;
-      background: ${colors[Math.floor(Math.random() * colors.length)]};
-      border-radius: ${Math.random() > 0.5 ? '50%' : '0'};
-      left: ${left}%;
-      top: -10px;
-      pointer-events: none;
-      z-index: 999;
-      animation: confetti-fall ${duration}s ease-in forwards;
-      animation-delay: ${delay}s;
-      opacity: 0.8;
-      transform: rotate(${rotation}deg);
+    const swayDuration = Math.random() * 1.5 + 1;
+    const startRot = Math.random() * 360;
+
+    el.style.cssText = `
+      position:fixed;
+      width:${w}px;
+      height:${h}px;
+      background:${color};
+      border-radius:${shape === 'circle' ? '50%' : shape === 'rect' ? '2px' : '1px'};
+      left:${left}%;
+      top:-12px;
+      pointer-events:none;
+      z-index:1001;
+      opacity:0.92;
+      transform:rotate(${startRot}deg);
+      animation:
+        confetti-fall ${duration}s ease-in ${delay}s forwards,
+        confetti-sway ${swayDuration}s ease-in-out ${delay}s infinite;
     `;
-    document.body.appendChild(conf);
-    
-    // Clean up after animation
-    setTimeout(() => conf.remove(), (duration + delay) * 1000);
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), (duration + delay + 0.2) * 1000);
   }
 }
 
