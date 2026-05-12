@@ -298,6 +298,12 @@ html,body{height:100%;background:var(--bg0);color:var(--text1);font-family:'DM S
 .rest-timer-btn{background:var(--bg4);border:none;border-radius:6px;color:var(--text1);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;padding:8px 12px;cursor:pointer;transition:all .15s;}
 .rest-timer-btn:active{background:var(--bg5);}
 .rest-timer-edit{background:var(--bg4);border:1px solid var(--bg5);border-radius:6px;color:var(--text1);font-family:'DM Sans',sans-serif;font-size:14px;padding:6px 8px;width:52px;text-align:center;outline:none;}
+.floating-rest-timer{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%) scale(.96);z-index:260;background:rgba(8,8,8,.92);border:1px solid var(--bg4);border-radius:18px;padding:18px 24px;min-width:132px;text-align:center;box-shadow:0 18px 50px rgba(0,0,0,.45);opacity:0;pointer-events:none;transition:opacity .18s ease, transform .18s ease;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);}
+.floating-rest-timer.show{opacity:1;transform:translate(-50%,-50%) scale(1);pointer-events:auto;}
+.floating-rest-timer.done{border-color:#cc2222;}
+.floating-rest-timer-time{font-family:'Bebas Neue',sans-serif;font-size:58px;line-height:1;color:var(--white);letter-spacing:1px;}
+.floating-rest-timer-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--text3);margin-top:4px;}
+.floating-rest-timer.done .floating-rest-timer-label{color:#cc2222;}
 /* SROW VERSION D: # is RPE indicator, X stays alone */
 .srow-d{display:grid;grid-template-columns:28px 1fr 1fr 46px 28px 22px;gap:6px;align-items:center;}
 .col-labels-d{display:grid;grid-template-columns:28px 1fr 1fr 46px 28px 22px;gap:6px;padding:0 14px;margin-bottom:2px;}
@@ -393,7 +399,6 @@ if ('serviceWorker' in navigator) {
       <div class="subnav">
         <button class="subtab active" data-sv="train">Train</button>
         <button class="subtab" data-sv="tpl">Routines</button>
-        <button class="subtab" data-sv="exlib">Exercises</button>
       </div>
       <!-- TRAIN -->
       <div class="subview active" id="sv-train">
@@ -408,14 +413,6 @@ if ('serviceWorker' in navigator) {
       <div class="subview" id="sv-tpl">
         <button class="btn" id="newTplBtn">+ New routine</button>
         <div id="tplList"></div>
-      </div>
-      <!-- EXERCISES LIBRARY -->
-      <div class="subview" id="sv-exlib">
-        <button class="btn" id="newExBtn">+ New exercise</button>
-        <div class="slabel" id="customExLabel" style="display:none;">Custom</div>
-        <div class="exlib-card" id="customExList"></div>
-        <div class="slabel">Built-in</div>
-        <div class="exlib-card" id="builtinExList"></div>
       </div>
     </div>
 
@@ -667,31 +664,57 @@ function getAllExercises() {
 }
 
 // ── HAPTIC & AUDIO FEEDBACK (Mobile) ──────────────────────────
-// 🔊 Generates a pop sound "pop" usando Web Audio API para clicks
+// Reuse one AudioContext. Creating a new context on every tap can make
+// Safari/Chrome mobile fade, suspend, or eventually mute all app sounds.
+let sharedAudioContext = null;
+let lastPopAt = 0;
+
+function getSharedAudioContext() {
+  const AudioCtx = window.AudioContext || window.webkitAudioContext;
+  if (!AudioCtx) return null;
+  if (!sharedAudioContext || sharedAudioContext.state === 'closed') {
+    sharedAudioContext = new AudioCtx();
+  }
+  if (sharedAudioContext.state === 'suspended') {
+    sharedAudioContext.resume().catch(() => {});
+  }
+  return sharedAudioContext;
+}
+
+// 🔊 Generates a short pop sound for clicks
 function playPopSound() {
   try {
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const audioContext = getSharedAudioContext();
+    if (!audioContext) return;
+
+    // Keep very fast repeated taps from stacking too many oscillators.
+    const perfNow = performance.now();
+    if (perfNow - lastPopAt < 35) return;
+    lastPopAt = perfNow;
+
     const now = audioContext.currentTime;
-    
-    // Create oscillator for pop sound
     const osc = audioContext.createOscillator();
     const gain = audioContext.createGain();
-    
+
     osc.connect(gain);
     gain.connect(audioContext.destination);
-    
-    // Frequency drops quickly (pop effect)
+
+    osc.type = 'sine';
     osc.frequency.setValueAtTime(800, now);
-    osc.frequency.exponentialRampToValueAtTime(100, now + 0.1);
-    
-    // Volume fades out
-    gain.gain.setValueAtTime(0.3, now);
-    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
-    
+    osc.frequency.exponentialRampToValueAtTime(120, now + 0.08);
+
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(0.22, now + 0.005);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.09);
+
     osc.start(now);
     osc.stop(now + 0.1);
+    osc.onended = () => {
+      osc.disconnect();
+      gain.disconnect();
+    };
   } catch (e) {
-    // If Web Audio not available, continue without sound
+    // If Web Audio is not available, continue without sound.
   }
 }
 
@@ -786,7 +809,6 @@ document.querySelectorAll('.subnav').forEach(nav => {
 function renderSubView(sv) {
   if(sv==='train') renderTrain();
   else if(sv==='tpl') renderTpl();
-  else if(sv==='exlib') renderExLib();
   else if(sv==='hist') renderHist();
   else if(sv==='statsview') renderStats();
 }
@@ -1035,14 +1057,17 @@ document.getElementById('onermGrid') && document.getElementById('onermGrid').add
 // ── EXERCISES LIBRARY ─────────────────────────────────────────
 let editingExId = null;
 
-document.getElementById('newExBtn').addEventListener('click', () => {
-  clickFeedback(); // 📳 Vibration + sound on new exercise
-  editingExId = null;
-  document.getElementById('mExTitle').textContent = 'New exercise';
-  document.getElementById('mExName').value = '';
-  document.getElementById('mExCat').value = '';
-  openModal('mEx');
-});
+const newExBtn = document.getElementById('newExBtn');
+if(newExBtn) {
+  newExBtn.addEventListener('click', () => {
+    clickFeedback(); // 📳 Vibration + sound on new exercise
+    editingExId = null;
+    document.getElementById('mExTitle').textContent = 'New exercise';
+    document.getElementById('mExName').value = '';
+    document.getElementById('mExCat').value = '';
+    openModal('mEx');
+  });
+}
 
 function saveEx() {
   const name = document.getElementById('mExName').value.trim();
@@ -1086,9 +1111,11 @@ function deleteEx(id) {
 function renderExLib() {
   const {customEx} = getData();
 
-  // custom section
+  // The standalone Exercises library UI has been removed, but the exercise database remains.
   const customLabel = document.getElementById('customExLabel');
   const customList = document.getElementById('customExList');
+  const builtinList = document.getElementById('builtinExList');
+  if(!customLabel || !customList || !builtinList) return;
   if(customEx.length) {
     customLabel.style.display = 'block';
     customList.style.display = 'block';
@@ -1110,7 +1137,7 @@ function renderExLib() {
   }
 
   // built-in list
-  document.getElementById('builtinExList').innerHTML = BUILTIN.map(e =>
+  builtinList.innerHTML = BUILTIN.map(e =>
     `<div class="exlib-item"><div class="exlib-name">${e}</div></div>`
   ).join('');
 }
@@ -1589,6 +1616,7 @@ function startSession(tplId) {
             reps: defaultReps.toString(),
             weight: defaultWeight,
             rpe: '',
+            restTimerStarted: false,
             notes: ''
           });
         }
@@ -1605,8 +1633,7 @@ function startSession(tplId) {
 function renderActiveSession() {
   if(!activeSession) return;
   const content = document.getElementById('mSessContent');
-  if(!window._restTimer) window._restTimer = {running:false, remaining:0, default:180, interval:null};
-  const rt = window._restTimer;
+  const rt = ensureRestTimer();
   const rtDisplay = rt.running ? formatTimer(rt.remaining) : formatTimer(rt.default);
 
   let html = `
@@ -1655,7 +1682,7 @@ function renderActiveSession() {
         <div class="col-label"></div>
       </div>
       <div class="sets-area" id="sets-ex-${ei}">
-        ${ex.sets.map((s,si) => buildSetRow(ei,si,s.weight,s.reps,s.rpe||'')).join('')}
+        ${ex.sets.map((s,si) => buildSetRow(ei,si,s.weight,s.reps,s.rpe||'',!!s.restTimerStarted)).join('')}
       </div>
       <div style="padding:0 14px 12px;">
         <button class="btn-dashed" onclick="clickFeedback(); addSessSet(${ei},'')">+ Set</button>
@@ -1699,7 +1726,7 @@ function renderActiveSession() {
   content.innerHTML = html;
 }
 
-function buildSetRow(ei, si, weight='', reps='', rpe='') {
+function buildSetRow(ei, si, weight='', reps='', rpe='', restTimerStarted=false) {
   sessSetCount++;
   const ex = activeSession ? activeSession.exercises[ei] : null;
   const isTopSet = ex ? ex.topSet : false;
@@ -1712,7 +1739,7 @@ function buildSetRow(ei, si, weight='', reps='', rpe='') {
   const exName = ex ? ex.name : '';
   const prReps = exName && weight ? getBestRepsForWeight(exName, weight, sessions) : null;
   const prRepsHtml = prReps ? `<div class="spr" id="spr-${ei}-${si}" title="Your PR at this weight">×${prReps}</div>` : `<div class="spr" id="spr-${ei}-${si}"></div>`;
-  return `<div class="srow-d" data-ei="${ei}" data-si="${si}">
+  return `<div class="srow-d" data-ei="${ei}" data-si="${si}" data-rest-timer-started="${restTimerStarted?'1':'0'}">
     <button class="sn-rpe ${rpeClass}" onclick="cycleRpe(this,${ei},${si})" title="Tap to rate">${rpeLabel}</button>
     <input type="number" class="sinp w-inp" value="${weight}" placeholder="0" min="0" step="0.5" inputmode="decimal"
       oninput="liveEst(this,${ei},${si})">
@@ -1735,10 +1762,17 @@ function cycleRpe(btn, ei, si) {
   const ei_ = parseInt(btn.closest('.srow-d').dataset.ei);
   const label = next==='easy'?'🟢':next==='medium'?'🟡':next==='hard'?'🔴':`${si_+1}`;
   btn.textContent = label;
+  const row = btn.closest('.srow-d');
+  const hasAlreadyStartedTimer = row && row.dataset.restTimerStarted === '1';
+  const shouldStartTimer = !hasAlreadyStartedTimer && !!next;
+  if(row && shouldStartTimer) row.dataset.restTimerStarted = '1';
   if(activeSession && activeSession.exercises[ei_] && activeSession.exercises[ei_].sets[si_]!==undefined) {
     activeSession.exercises[ei_].sets[si_].rpe = next;
+    if(shouldStartTimer) activeSession.exercises[ei_].sets[si_].restTimerStarted = true;
+    else if(activeSession.exercises[ei_].sets[si_].restTimerStarted === undefined) activeSession.exercises[ei_].sets[si_].restTimerStarted = hasAlreadyStartedTimer;
     saveActiveSession();
   }
+  if(shouldStartTimer) startRestTimer();
 }
 
 function moveSessEx(ei, dir) {
@@ -1750,22 +1784,88 @@ function moveSessEx(ei, dir) {
   renderActiveSession();
 }
 
-function formatTimer(s){const m=Math.floor(s/60);return `${m}:${(s%60).toString().padStart(2,'0')}`;}
-function toggleRestTimer(){
-  const rt=window._restTimer;
-  if(rt.running){clearInterval(rt.interval);rt.running=false;rt.remaining=rt.default;}
-  else{rt.remaining=rt.default;rt.running=true;rt.interval=setInterval(()=>{rt.remaining--;const d=document.getElementById('restTimerDisplay'),b=document.getElementById('restTimerBtn');if(d)d.textContent=formatTimer(rt.remaining);if(rt.remaining<=0){clearInterval(rt.interval);rt.running=false;playRestBeeps();if(d){d.textContent=formatTimer(rt.default);d.classList.remove('running');}if(b)b.textContent='Rest';}},1000);}
+function formatTimer(s){const m=Math.floor(Math.max(0,s)/60);return `${m}:${(Math.max(0,s)%60).toString().padStart(2,'0')}`;}
+function ensureRestTimer(){
+  if(!window._restTimer) window._restTimer = {running:false, remaining:0, default:180, interval:null, doneTimeout:null};
+  return window._restTimer;
+}
+function ensureFloatingRestTimer(){
+  let el=document.getElementById('floatingRestTimer');
+  if(!el){
+    el=document.createElement('div');
+    el.id='floatingRestTimer';
+    el.className='floating-rest-timer';
+    el.innerHTML='<div class="floating-rest-timer-time" id="floatingRestTimerTime">3:00</div><div class="floating-rest-timer-label" id="floatingRestTimerLabel">Rest</div>';
+    el.addEventListener('click',()=>{clickFeedback(); openRestTimerModal();});
+    document.body.appendChild(el);
+  }
+  return el;
+}
+function updateRestTimerUI(){
+  const rt=ensureRestTimer();
   const d=document.getElementById('restTimerDisplay'),b=document.getElementById('restTimerBtn');
-  if(d){if(rt.running)d.classList.add('running');else{d.classList.remove('running');d.textContent=formatTimer(rt.default);}}
+  if(d){d.textContent=formatTimer(rt.running?rt.remaining:rt.default);d.classList.toggle('running',rt.running);}
   if(b)b.textContent=rt.running?'Stop':'Rest';
+  const f=ensureFloatingRestTimer();
+  const ft=document.getElementById('floatingRestTimerTime');
+  const fl=document.getElementById('floatingRestTimerLabel');
+  if(ft)ft.textContent=formatTimer(rt.running?rt.remaining:rt.default);
+  if(fl)fl.textContent='Rest';
+  f.classList.toggle('show',rt.running);
+  if(rt.running)f.classList.remove('done');
 }
-function setRestTimerDefault(val){const v=parseInt(val);if(v>=10&&v<=600){window._restTimer.default=v;if(!window._restTimer.running){const d=document.getElementById('restTimerDisplay');if(d)d.textContent=formatTimer(v);}}}
+function startRestTimer(){
+  const rt=ensureRestTimer();
+  if(rt.interval) clearInterval(rt.interval);
+  if(rt.doneTimeout) clearTimeout(rt.doneTimeout);
+  rt.remaining=rt.default;
+  rt.running=true;
+  updateRestTimerUI();
+  rt.interval=setInterval(()=>{
+    rt.remaining--;
+    updateRestTimerUI();
+    if(rt.remaining<=0) finishRestTimer();
+  },1000);
+}
+function stopRestTimer(){
+  const rt=ensureRestTimer();
+  if(rt.interval) clearInterval(rt.interval);
+  if(rt.doneTimeout) clearTimeout(rt.doneTimeout);
+  rt.interval=null;
+  rt.running=false;
+  rt.remaining=rt.default;
+  updateRestTimerUI();
+}
+function finishRestTimer(){
+  const rt=ensureRestTimer();
+  if(rt.interval) clearInterval(rt.interval);
+  rt.interval=null;
+  rt.running=false;
+  rt.remaining=0;
+  playRestBeeps();
+  const f=ensureFloatingRestTimer();
+  const ft=document.getElementById('floatingRestTimerTime');
+  const fl=document.getElementById('floatingRestTimerLabel');
+  if(ft)ft.textContent='0:00';
+  if(fl)fl.textContent='Done';
+  f.classList.add('show','done');
+  const d=document.getElementById('restTimerDisplay'),b=document.getElementById('restTimerBtn');
+  if(d){d.textContent=formatTimer(rt.default);d.classList.remove('running');}
+  if(b)b.textContent='Rest';
+  if(rt.doneTimeout) clearTimeout(rt.doneTimeout);
+  rt.doneTimeout=setTimeout(()=>{f.classList.remove('show','done');rt.remaining=rt.default;updateRestTimerUI();},1200);
+}
+function toggleRestTimer(){
+  const rt=ensureRestTimer();
+  if(rt.running) stopRestTimer();
+  else startRestTimer();
+}
+function setRestTimerDefault(val){const v=parseInt(val);if(v>=10&&v<=600){const rt=ensureRestTimer();rt.default=v;if(!rt.running){rt.remaining=v;updateRestTimerUI();}}}
 function playRestBeeps(){
-  try{const ctx=new(window.AudioContext||window.webkitAudioContext)();[0,0.4,0.8].forEach(offset=>{const osc=ctx.createOscillator(),gain=ctx.createGain();osc.connect(gain);gain.connect(ctx.destination);osc.frequency.setValueAtTime(880,ctx.currentTime+offset);gain.gain.setValueAtTime(0.4,ctx.currentTime+offset);gain.gain.exponentialRampToValueAtTime(0.01,ctx.currentTime+offset+0.25);osc.start(ctx.currentTime+offset);osc.stop(ctx.currentTime+offset+0.25);});if(navigator.vibrate)navigator.vibrate([100,100,100,100,200]);}catch(e){}
+  try{const ctx=getSharedAudioContext();if(!ctx)return;[0,0.4,0.8].forEach(offset=>{const osc=ctx.createOscillator(),gain=ctx.createGain();osc.connect(gain);gain.connect(ctx.destination);osc.frequency.setValueAtTime(880,ctx.currentTime+offset);gain.gain.setValueAtTime(0.4,ctx.currentTime+offset);gain.gain.exponentialRampToValueAtTime(0.01,ctx.currentTime+offset+0.25);osc.start(ctx.currentTime+offset);osc.stop(ctx.currentTime+offset+0.25);});if(navigator.vibrate)navigator.vibrate([100,100,100,100,200]);}catch(e){}
 }
-
 function openRestTimerModal() {
-  const rt = window._restTimer;
+  const rt = ensureRestTimer();
   const minutes = Math.floor(rt.default / 60);
   document.getElementById('restTimerMinutesInp').value = minutes;
   openModal('mRestTimer');
@@ -1781,13 +1881,7 @@ function saveRestTimerEdit() {
   }
   
   const seconds = minutes * 60;
-  window._restTimer.default = seconds;
-  
-  // Update display
-  const d = document.getElementById('restTimerDisplay');
-  if(d && !window._restTimer.running) {
-    d.textContent = formatTimer(seconds);
-  }
+  setRestTimerDefault(seconds);
   
   closeModal('mRestTimer');
 }
@@ -1830,6 +1924,7 @@ function saveExerciseEdit() {
       reps: newReps.toString(),
       weight: newWeight,
       rpe: '',
+      restTimerStarted: false,
       notes: ''
     });
   }
@@ -1887,9 +1982,9 @@ function addSessSet(ei, defaultWeight='') {
   const ex = activeSession.exercises[ei];
   const si = ex.sets.length;
   const w = defaultWeight || ex.goalWeight || '';
-  ex.sets.push({weight: w, reps:''});
+  ex.sets.push({weight: w, reps:'', rpe:'', restTimerStarted:false});
   const area = document.getElementById(`sets-ex-${ei}`);
-  if(area) area.insertAdjacentHTML('beforeend', buildSetRow(ei, si, w, '', ''));
+  if(area) area.insertAdjacentHTML('beforeend', buildSetRow(ei, si, w, '', '', false));
   saveActiveSession();
 }
 
@@ -1908,7 +2003,9 @@ function collectSessionFromDOM() {
     ex.sets = [...rows].map(row => {
       const btn = row.querySelector('.sn-rpe');
       const rpe = btn&&btn.classList.contains('rpe-easy')?'easy':btn&&btn.classList.contains('rpe-medium')?'medium':btn&&btn.classList.contains('rpe-hard')?'hard':'';
-      return {weight:row.querySelector('.w-inp').value,reps:row.querySelector('.r-inp').value,rpe};
+      const prevSet = activeSession.exercises[ei] && activeSession.exercises[ei].sets ? activeSession.exercises[ei].sets[parseInt(row.dataset.si)] : null;
+      const restTimerStarted = row.dataset.restTimerStarted === '1' || !!(prevSet && prevSet.restTimerStarted);
+      return {weight:row.querySelector('.w-inp').value,reps:row.querySelector('.r-inp').value,rpe,restTimerStarted};
     });
   });
   saveActiveSession();
@@ -2243,7 +2340,7 @@ function saveEditSess() {
       if(w || r) {
         // Preserve original RPE if set existed, else blank
         const origSet = s.exercises[ei] && s.exercises[ei].sets[newSets.length];
-        newSets.push({ weight: w, reps: r, rpe: origSet ? origSet.rpe : '' });
+        newSets.push({ weight: w, reps: r, rpe: origSet ? origSet.rpe : '', restTimerStarted: origSet ? !!origSet.restTimerStarted : false });
       }
     });
     if(s.exercises[ei]) s.exercises[ei].sets = newSets;
@@ -2952,7 +3049,8 @@ function formatTime(timestamp) {
 
 function playCelebrationSound() {
   try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const ctx = getSharedAudioContext();
+    if (!ctx) return;
     const notes = [523.25, 659.25, 783.99, 1046.50, 1318.51]; // C5, E5, G5, C6, E6
     notes.forEach((freq, i) => {
       const osc = ctx.createOscillator();
@@ -3038,15 +3136,15 @@ function showFinishSessionModal(session, sessions, newBasicPRs=[]) {
       <button onclick="closeFinishSessionModal()" style="position:absolute;top:10px;right:12px;background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer;line-height:1;padding:4px;">✕</button>
 
       <div style="font-size:56px;margin-bottom:8px;display:inline-block;animation:trophyBounce 0.7s cubic-bezier(0.34,1.56,0.64,1) 0.1s both;">💪</div>
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:2px;color:var(--white);line-height:1;">SESSION FINISHED</div>
-      <div style="font-size:13px;color:var(--text3);margin-top:4px;margin-bottom:16px;">Duration: <span style="color:var(--text2);font-weight:600;">${durationText}</span></div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:2px;color:var(--white);line-height:1;">SESIÓN COMPLETA</div>
+      <div style="font-size:13px;color:var(--text3);margin-top:4px;margin-bottom:16px;">Duración: <span style="color:var(--text2);font-weight:600;">${durationText}</span></div>
 
-      ${performedLifts.length > 0 ? `<div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;text-align:left;">Basic lifts this session</div>` : ''}
+      ${performedLifts.length > 0 ? `<div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;text-align:left;">Básicos esta sesión</div>` : ''}
       <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:18px;">${prRowsHtml}</div>
 
       <div style="display:flex;gap:8px;">
         <button onclick="clickFeedback();exportData();" style="background:var(--bg3);color:var(--text2);border:1px solid var(--bg4);border-radius:10px;padding:13px 14px;flex:1;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;">⬇ Export</button>
-        <button onclick="closeFinishSessionModal()" style="background:var(--white);color:var(--bg0);border:none;border-radius:10px;padding:13px 20px;flex:2;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;cursor:pointer;">Done!</button>
+        <button onclick="closeFinishSessionModal()" style="background:var(--white);color:var(--bg0);border:none;border-radius:10px;padding:13px 20px;flex:2;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;cursor:pointer;">Listo</button>
       </div>
     </div>
   `;
@@ -3069,7 +3167,8 @@ function closeFinishSessionModal() {
 
 function playPRFanfare() {
   try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const ctx = getSharedAudioContext();
+    if (!ctx) return;
     const now = ctx.currentTime;
     const master = ctx.createGain();
     master.gain.setValueAtTime(0.28, now);
@@ -3131,11 +3230,11 @@ function showNextPRPopup(prs, idx) {
     <div style="background:var(--bg2);border:1.5px solid #4caf50;border-radius:18px;padding:26px 20px 22px;width:100%;max-width:340px;text-align:center;position:relative;animation:slideUp 0.42s cubic-bezier(0.34,1.56,0.64,1);">
       <button onclick="clickFeedback();document.getElementById('prOverlay').remove();showNextPRPopup(${JSON.stringify(prs).replace(/"/g,'&quot;')}, ${idx + 1});" style="position:absolute;top:10px;right:12px;background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer;line-height:1;padding:4px;">✕</button>
       <div style="font-size:54px;margin-bottom:8px;">🏆</div>
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:2px;color:var(--white);line-height:1;">NEW PR</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:2px;color:var(--white);line-height:1;">NUEVO PR</div>
       <div style="font-size:13px;color:var(--text3);margin-top:6px;text-transform:uppercase;letter-spacing:1px;">${pr.lift}</div>
       <div style="font-family:'Bebas Neue',sans-serif;font-size:58px;color:#4caf50;line-height:1;margin-top:10px;">${pr.weight}<span style="font-size:20px;color:var(--text3);">kg</span></div>
       <div style="font-size:16px;color:var(--text2);margin-top:2px;">${pr.reps} reps</div>
-      ${prs.length > 1 ? `<div style="font-size:12px;color:var(--text3);margin-top:14px;">${idx + 1} of ${prs.length}</div>` : ''}
+      ${prs.length > 1 ? `<div style="font-size:12px;color:var(--text3);margin-top:14px;">${idx + 1} de ${prs.length}</div>` : ''}
     </div>`;
   document.body.appendChild(overlay);
 }
