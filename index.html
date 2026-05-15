@@ -320,25 +320,26 @@ html,body{height:100%;background:var(--bg0);color:var(--text1);font-family:'DM S
 .wc-delta.up{color:var(--white);}
 
 /* EXERCISE COMPARE */
-.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
-.compare-box{background:var(--bg3);border:1px solid var(--bg4);border-radius:var(--rs);padding:12px;}
+.compare-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;margin-bottom:12px;}
+.compare-box{background:var(--bg3);border:1px solid var(--bg4);border-radius:var(--rs);padding:12px;min-width:0;}
 .compare-box-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--text3);margin-bottom:10px;}
 .compare-empty{font-size:13px;color:var(--text3);line-height:1.5;}
-.cmp-result-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
-.cmp-card{background:var(--bg3);border:1px solid var(--bg4);border-radius:var(--rs);padding:12px;margin-bottom:10px;}
-.cmp-result-grid .cmp-card{margin-bottom:0;min-width:0;}
+.cmp-result-grid{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:10px;margin-bottom:10px;align-items:start;width:100%;}
+.cmp-card{background:var(--bg3);border:1px solid var(--bg4);border-radius:var(--rs);padding:12px;margin-bottom:10px;min-width:0;overflow:hidden;}
+.cmp-result-grid>.cmp-card{margin-bottom:0!important;width:auto!important;max-width:none!important;}
 .cmp-title{font-family:'Bebas Neue',sans-serif;font-size:28px;line-height:1;color:var(--white);letter-spacing:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.cmp-date{font-size:12px;color:var(--text3);margin-top:3px;}
-.cmp-metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;}
-.cmp-metric{background:var(--bg2);border-radius:8px;padding:9px;min-width:0;}
-.cmp-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:3px;}
-.cmp-value{font-family:'Bebas Neue',sans-serif;font-size:26px;line-height:1;color:var(--white);white-space:nowrap;}
-.cmp-delta-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
-.cmp-delta-row{background:var(--bg3);border:1px solid var(--bg4);border-radius:var(--rs);padding:10px;display:flex;flex-direction:column;gap:5px;min-width:0;}
+.cmp-date{font-size:12px;color:var(--text3);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.cmp-metrics{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:8px;margin-top:12px;}
+.cmp-metric{background:var(--bg2);border-radius:8px;padding:9px;min-width:0;overflow:hidden;}
+.cmp-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:3px;line-height:1.15;}
+.cmp-value{font-family:'Bebas Neue',sans-serif;font-size:26px;line-height:1;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.cmp-delta-grid{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:8px;margin-bottom:10px;width:100%;}
+.cmp-delta-row{background:var(--bg3);border:1px solid var(--bg4);border-radius:var(--rs);padding:10px;display:flex;flex-direction:column;gap:5px;min-width:0;overflow:hidden;}
 .cmp-delta-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);line-height:1.25;}
-.cmp-delta-val{font-size:13px;font-weight:700;color:var(--white);line-height:1.25;}
-.cmp-summary{font-size:13px;color:var(--text3);line-height:1.5;background:var(--bg3);border:1px solid var(--bg4);border-radius:var(--rs);padding:12px;}
-@media (max-width:450px){.compare-grid{gap:8px}.compare-box{padding:10px}.cmp-result-grid{gap:8px}.cmp-card{padding:10px}.cmp-title{font-size:22px}.cmp-metrics{gap:6px}.cmp-metric{padding:7px 6px}.cmp-label{font-size:9px;letter-spacing:.7px}.cmp-value{font-size:21px}.cmp-delta-grid{gap:8px}.cmp-delta-row{padding:9px 8px}.cmp-delta-val{font-size:12px}}
+.cmp-delta-val{font-size:13px;font-weight:700;color:var(--white);line-height:1.25;word-break:break-word;}
+.cmp-summary{font-size:13px;color:var(--text3);line-height:1.5;background:var(--bg3);border:1px solid var(--bg4);border-radius:var(--rs);padding:12px;width:100%;}
+@media (max-width:450px){.compare-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}.compare-box{padding:10px}.cmp-result-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:8px}.cmp-card{padding:10px}.cmp-title{font-size:20px}.cmp-date{font-size:11px}.cmp-metrics{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:6px}.cmp-metric{padding:7px 6px}.cmp-label{font-size:8px;letter-spacing:.55px}.cmp-value{font-size:18px}.cmp-delta-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:8px}.cmp-delta-row{padding:9px 8px}.cmp-delta-label{font-size:9px;letter-spacing:.55px}.cmp-delta-val{font-size:11px}}
+@media (max-width:360px){.cmp-card{padding:8px}.cmp-title{font-size:18px}.cmp-value{font-size:16px}.cmp-label{font-size:7.5px}.cmp-metric{padding:6px 5px}.cmp-delta-row{padding:8px 6px}}
 
 </style>
 
@@ -2755,11 +2756,11 @@ function openCompareResult() {
     volumeWinner = `${escapeHtml(winner.exName)} had ${formatKg(winner.volume - loser.volume)}kg${pct !== null ? ` (${pct}%)` : ''} more volume.`;
   }
   body.innerHTML = `
-    <div class="cmp-result-grid">
+    <div class="cmp-result-grid" style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;width:100%;">
       ${compareCard(a, 'Exercise A')}
       ${compareCard(b, 'Exercise B')}
     </div>
-    <div class="cmp-delta-grid">
+    <div class="cmp-delta-grid" style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;width:100%;">
       <div class="cmp-delta-row"><div class="cmp-delta-label">Max weight difference</div><div class="cmp-delta-val">${metricDelta(a,b,'maxWeight','kg')}</div></div>
       <div class="cmp-delta-row"><div class="cmp-delta-label">Total reps difference</div><div class="cmp-delta-val">${metricDelta(a,b,'totalReps')}</div></div>
       <div class="cmp-delta-row"><div class="cmp-delta-label">Volume difference</div><div class="cmp-delta-val">${metricDelta(a,b,'volume','kg')}</div></div>
