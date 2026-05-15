@@ -2755,39 +2755,57 @@ function getProgressPoints(exName, sessions) {
   return Object.values(byDate).sort((a,b) => a.date.localeCompare(b.date)).slice(-8);
 }
 
-function buildCompareChart(exA, exB, sessions) {
-  const aPts = getProgressPoints(exA, sessions);
-  const bPts = getProgressPoints(exB, sessions);
-  const all = [...aPts, ...bPts];
-  if(all.length < 2) return '<div class="cmp-chart-empty">Not enough history yet for a progress chart.</div>';
-  const dates = [...new Set(all.map(p => p.date))].sort((a,b) => a.localeCompare(b));
-  const values = all.map(p => p.e);
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const pad = max === min ? 10 : Math.max(5, Math.round((max - min) * 0.15));
-  const yMin = Math.max(0, min - pad);
-  const yMax = max + pad;
-  const w = 320, h = 150, left = 34, right = 10, top = 12, bottom = 28;
-  const xFor = d => dates.length === 1 ? left + (w-left-right)/2 : left + (dates.indexOf(d) * (w-left-right) / (dates.length - 1));
-  const yFor = v => top + (yMax - v) * (h-top-bottom) / Math.max(1, yMax - yMin);
-  const pathFor = pts => pts.map((p,i) => `${i?'L':'M'}${xFor(p.date).toFixed(1)} ${yFor(p.e).toFixed(1)}`).join(' ');
-  const circlesFor = (pts, cls) => pts.map(p => `<circle cx="${xFor(p.date).toFixed(1)}" cy="${yFor(p.e).toFixed(1)}" r="3" class="${cls}"><title>${fmtDate(p.date)} · ${formatKg(p.w)}×${p.r} · e1RM ${formatKg(p.e)}kg</title></circle>`).join('');
-  const yTicks = [yMin, Math.round((yMin + yMax) / 2), yMax];
-  const xLabels = dates.length > 4 ? [dates[0], dates[Math.floor((dates.length-1)/2)], dates[dates.length-1]] : dates;
-  return `
-    <svg viewBox="0 0 ${w} ${h}" role="img" aria-label="Progress comparison chart">
-      <style>
-        .axis{stroke:var(--bg5);stroke-width:1}.grid{stroke:var(--bg4);stroke-width:1;opacity:.6}.txt{fill:var(--text3);font-size:9px;font-family:'DM Sans',sans-serif}.lineA{fill:none;stroke:#cc2222;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}.lineB{fill:none;stroke:var(--white);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}.dotA{fill:#cc2222}.dotB{fill:var(--white)}
-      </style>
-      ${yTicks.map(t => `<line class="grid" x1="${left}" y1="${yFor(t).toFixed(1)}" x2="${w-right}" y2="${yFor(t).toFixed(1)}"></line><text class="txt" x="4" y="${(yFor(t)+3).toFixed(1)}">${formatKg(t)}</text>`).join('')}
-      <line class="axis" x1="${left}" y1="${h-bottom}" x2="${w-right}" y2="${h-bottom}"></line>
-      <line class="axis" x1="${left}" y1="${top}" x2="${left}" y2="${h-bottom}"></line>
-      ${aPts.length > 1 ? `<path d="${pathFor(aPts)}" class="lineA"></path>` : ''}
-      ${bPts.length > 1 ? `<path d="${pathFor(bPts)}" class="lineB"></path>` : ''}
-      ${circlesFor(aPts, 'dotA')}
-      ${circlesFor(bPts, 'dotB')}
-      ${xLabels.map(d => `<text class="txt" text-anchor="middle" x="${xFor(d).toFixed(1)}" y="${h-8}">${fmtDate(d).slice(0,6)}</text>`).join('')}
-    </svg>`;
+function buildCompareChart(a, b, sessions) {
+  const sameExercise = a.exName === b.exName;
+  const selectedDates = [a.date, b.date].filter(Boolean).sort((x,y) => x.localeCompare(y));
+
+  function drawChart(aPts, bPts, mode) {
+    const all = [...aPts, ...bPts];
+    if(all.length < 2) return '<div class="cmp-chart-empty">Not enough history yet for a progress chart.</div>';
+    const dates = [...new Set(all.map(p => p.date))].sort((x,y) => x.localeCompare(y));
+    const values = all.map(p => p.e);
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    const pad = max === min ? 10 : Math.max(5, Math.round((max - min) * 0.25));
+    const yMin = Math.max(0, min - pad);
+    const yMax = max + pad;
+    const w = 320, h = 150, left = 34, right = 10, top = 12, bottom = 28;
+    const xFor = d => dates.length === 1 ? left + (w-left-right)/2 : left + (dates.indexOf(d) * (w-left-right) / (dates.length - 1));
+    const yFor = v => top + (yMax - v) * (h-top-bottom) / Math.max(1, yMax - yMin);
+    const pathFor = pts => pts.map((p,i) => `${i?'L':'M'}${xFor(p.date).toFixed(1)} ${yFor(p.e).toFixed(1)}`).join(' ');
+    const circlesFor = (pts, cls) => pts.map(p => `<circle cx="${xFor(p.date).toFixed(1)}" cy="${yFor(p.e).toFixed(1)}" r="3.5" class="${cls}"><title>${fmtDate(p.date)} · ${formatKg(p.w)}×${p.r} · e1RM ${formatKg(p.e)}kg</title></circle>`).join('');
+    const yTicks = [yMin, Math.round((yMin + yMax) / 2), yMax];
+    const xLabels = dates.length > 4 ? [dates[0], dates[Math.floor((dates.length-1)/2)], dates[dates.length-1]] : dates;
+    const referenceLines = mode === 'sameExercise' ? `
+      <line x1="${left}" y1="${yFor(a.e1rm).toFixed(1)}" x2="${w-right}" y2="${yFor(a.e1rm).toFixed(1)}" class="lineA"></line>
+      <line x1="${left}" y1="${yFor(b.e1rm).toFixed(1)}" x2="${w-right}" y2="${yFor(b.e1rm).toFixed(1)}" class="lineB"></line>
+    ` : '';
+    return `
+      <svg viewBox="0 0 ${w} ${h}" role="img" aria-label="e1RM comparison chart">
+        <style>
+          .axis{stroke:var(--bg5);stroke-width:1}.grid{stroke:var(--bg4);stroke-width:1;opacity:.6}.txt{fill:var(--text3);font-size:9px;font-family:'DM Sans',sans-serif}.lineA{fill:none;stroke:#cc2222;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}.lineB{fill:none;stroke:var(--white);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}.dotA{fill:#cc2222;stroke:var(--bg3);stroke-width:1}.dotB{fill:var(--white);stroke:var(--bg3);stroke-width:1}
+        </style>
+        ${yTicks.map(t => `<line class="grid" x1="${left}" y1="${yFor(t).toFixed(1)}" x2="${w-right}" y2="${yFor(t).toFixed(1)}"></line><text class="txt" x="4" y="${(yFor(t)+3).toFixed(1)}">${formatKg(t)}</text>`).join('')}
+        <line class="axis" x1="${left}" y1="${h-bottom}" x2="${w-right}" y2="${h-bottom}"></line>
+        <line class="axis" x1="${left}" y1="${top}" x2="${left}" y2="${h-bottom}"></line>
+        ${referenceLines}
+        ${mode !== 'sameExercise' && aPts.length > 1 ? `<path d="${pathFor(aPts)}" class="lineA"></path>` : ''}
+        ${mode !== 'sameExercise' && bPts.length > 1 ? `<path d="${pathFor(bPts)}" class="lineB"></path>` : ''}
+        ${circlesFor(aPts, 'dotA')}
+        ${circlesFor(bPts, 'dotB')}
+        ${xLabels.map(d => `<text class="txt" text-anchor="middle" x="${xFor(d).toFixed(1)}" y="${h-8}">${fmtDate(d).slice(0,6)}</text>`).join('')}
+      </svg>`;
+  }
+
+  if(sameExercise) {
+    const aPts = [{date:a.date, w:a.weight, r:a.reps, e:a.e1rm}];
+    const bPts = [{date:b.date, w:b.weight, r:b.reps, e:b.e1rm}];
+    return drawChart(aPts, bPts, 'sameExercise');
+  }
+
+  const aPts = getProgressPoints(a.exName, sessions);
+  const bPts = getProgressPoints(b.exName, sessions);
+  return drawChart(aPts, bPts, 'history');
 }
 
 function metricSummary(a, b) {
@@ -2835,13 +2853,13 @@ function openCompareResult() {
     <div class="cmp-summary">${metricSummary(a,b)}</div>
     <div class="cmp-chart-card">
       <div class="cmp-chart-head">
-        <div class="cmp-chart-title">Progress line</div>
+        <div class="cmp-chart-title">e1RM comparison</div>
         <div class="cmp-legend">
           <div class="cmp-legend-item"><span class="cmp-legend-dot a"></span>${escapeHtml(exA)}</div>
           <div class="cmp-legend-item"><span class="cmp-legend-dot b"></span>${escapeHtml(exB)}</div>
         </div>
       </div>
-      <div class="cmp-chart-wrap">${buildCompareChart(exA, exB, sessions)}</div>
+      <div class="cmp-chart-wrap">${buildCompareChart(a, b, sessions)}</div>
     </div>
   `;
   openModal('mCompareResult');
