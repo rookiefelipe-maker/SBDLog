@@ -216,6 +216,35 @@ html,body{height:100%;background:var(--bg0);color:var(--text1);font-family:'DM S
 .goal-total-label{font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;font-weight:600;}
 .goal-total-val{font-family:'Bebas Neue',sans-serif;font-size:28px;line-height:1;color:var(--text3);}
 .goal-total-missing{font-family:'Bebas Neue',sans-serif;font-size:20px;color:#cc2222;line-height:1;}
+
+/* EXERCISE COMPARE */
+.compare-launch{display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.compare-launch-copy{font-size:13px;color:var(--text3);line-height:1.4;margin-top:-6px;}
+.cmp-select-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.cmp-panel{background:var(--bg3);border:1px solid var(--bg4);border-radius:var(--r);padding:12px;min-width:0;}
+.cmp-panel .flabel{margin-bottom:7px;}
+.cmp-panel .fsel{font-size:13px;padding:11px 10px;border-radius:8px;margin-bottom:10px;}
+.cmp-result-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px;}
+.cmp-card{background:var(--bg3);border:1px solid var(--bg4);border-radius:var(--r);padding:12px;min-width:0;}
+.cmp-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.4px;color:var(--text3);margin-bottom:7px;}
+.cmp-ex-name{font-family:'Bebas Neue',sans-serif;font-size:28px;line-height:1;color:var(--white);letter-spacing:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.cmp-date{font-size:12px;color:var(--text3);margin-top:5px;margin-bottom:12px;}
+.cmp-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.cmp-stat{background:var(--bg2);border-radius:10px;padding:10px;min-width:0;}
+.cmp-stat-k{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--text3);margin-bottom:4px;}
+.cmp-stat-v{font-family:'Bebas Neue',sans-serif;font-size:26px;line-height:1;color:var(--white);letter-spacing:.5px;white-space:nowrap;}
+.cmp-diff-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;}
+.cmp-diff{background:var(--bg3);border:1px solid var(--bg4);border-radius:var(--r);padding:12px;min-width:0;}
+.cmp-diff-v{font-size:16px;font-weight:700;color:var(--white);line-height:1.3;}
+.cmp-summary,.cmp-chart-card{background:var(--bg3);border:1px solid var(--bg4);border-radius:var(--r);padding:14px;margin-top:10px;}
+.cmp-summary{font-size:15px;line-height:1.5;color:var(--text2);}
+.cmp-legend{display:flex;gap:16px;align-items:center;margin-bottom:8px;font-size:12px;color:var(--text3);}
+.cmp-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:-1px;}
+.cmp-dot-a{background:#cc2222;}
+.cmp-dot-b{background:var(--white);}
+.cmp-chart{height:190px;width:100%;}
+.cmp-empty{font-size:13px;color:var(--text3);text-align:center;padding:18px 0;}
+
 /* SETTINGS */
 .settings-row{display:flex;justify-content:space-between;align-items:center;padding:16px 0;border-bottom:1px solid var(--bg3);gap:10px;flex-wrap:wrap;}
 .settings-row:last-child{border-bottom:none;}
@@ -228,6 +257,9 @@ html,body{height:100%;background:var(--bg0);color:var(--text1);font-family:'DM S
 /* EDIT SESSION */
 .esex{margin-bottom:18px;}
 .esex-name{font-size:13px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
+.esex-name-edit{margin-bottom:10px;}
+.esex-name-input{background:var(--bg3);border:1px solid var(--bg4);border-radius:var(--rs);padding:10px 12px;color:var(--text1);font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;width:100%;outline:none;}
+.esex-name-input:focus{border-color:var(--text3);}
 .eset-row{display:grid;grid-template-columns:28px 1fr 1fr auto;gap:6px;align-items:center;margin-bottom:6px;}
 .eset-num{font-size:12px;color:var(--text3);text-align:center;}
 .eset-inp{background:var(--bg3);border:1px solid var(--bg4);border-radius:var(--rs);padding:8px 10px;color:var(--text1);font-family:'DM Sans',sans-serif;font-size:14px;width:100%;text-align:center;}
@@ -318,39 +350,6 @@ html,body{height:100%;background:var(--bg0);color:var(--text1);font-family:'DM S
 /* TOP SET badge */
 .topset-badge{font-size:9px;font-weight:700;letter-spacing:1px;color:#cc2222;text-transform:uppercase;margin-left:6px;}
 .wc-delta.up{color:var(--white);}
-
-/* EXERCISE COMPARE */
-.compare-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;margin-bottom:12px;}
-.compare-box{background:var(--bg3);border:1px solid var(--bg4);border-radius:var(--rs);padding:12px;min-width:0;}
-.compare-box-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--text3);margin-bottom:10px;}
-.compare-empty{font-size:13px;color:var(--text3);line-height:1.5;}
-.cmp-result-grid{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:10px;margin-bottom:10px;align-items:start;width:100%;}
-.cmp-card{background:var(--bg3);border:1px solid var(--bg4);border-radius:var(--rs);padding:12px;margin-bottom:10px;min-width:0;overflow:hidden;}
-.cmp-result-grid>.cmp-card{margin-bottom:0!important;width:auto!important;max-width:none!important;}
-.cmp-title{font-family:'Bebas Neue',sans-serif;font-size:28px;line-height:1;color:var(--white);letter-spacing:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.cmp-date{font-size:12px;color:var(--text3);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.cmp-metrics{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:8px;margin-top:12px;}
-.cmp-metric{background:var(--bg2);border-radius:8px;padding:9px;min-width:0;overflow:hidden;}
-.cmp-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:3px;line-height:1.15;}
-.cmp-value{font-family:'Bebas Neue',sans-serif;font-size:26px;line-height:1;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.cmp-delta-grid{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:8px;margin-bottom:10px;width:100%;}
-.cmp-delta-row{background:var(--bg3);border:1px solid var(--bg4);border-radius:var(--rs);padding:10px;display:flex;flex-direction:column;gap:5px;min-width:0;overflow:hidden;}
-.cmp-delta-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);line-height:1.25;}
-.cmp-delta-val{font-size:13px;font-weight:700;color:var(--white);line-height:1.25;word-break:break-word;}
-.cmp-summary{font-size:13px;color:var(--text3);line-height:1.5;background:var(--bg3);border:1px solid var(--bg4);border-radius:var(--rs);padding:12px;width:100%;}
-.cmp-chart-card{background:var(--bg3);border:1px solid var(--bg4);border-radius:var(--rs);padding:12px;margin-top:10px;width:100%;}
-.cmp-chart-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px;}
-.cmp-chart-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--text3);}
-.cmp-legend{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:flex-end;}
-.cmp-legend-item{font-size:10px;color:var(--text3);display:flex;align-items:center;gap:5px;max-width:110px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.cmp-legend-dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex:0 0 auto;}
-.cmp-legend-dot.a{background:#cc2222;}
-.cmp-legend-dot.b{background:var(--white);}
-.cmp-chart-wrap{height:150px;width:100%;}
-.cmp-chart-wrap svg{width:100%;height:100%;display:block;}
-.cmp-chart-empty{font-size:12px;color:var(--text3);line-height:1.5;padding:10px 0;}
-@media (max-width:450px){.compare-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}.compare-box{padding:10px}.cmp-result-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:8px}.cmp-card{padding:10px}.cmp-title{font-size:20px}.cmp-date{font-size:11px}.cmp-metrics{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:6px}.cmp-metric{padding:7px 6px}.cmp-label{font-size:8px;letter-spacing:.55px}.cmp-value{font-size:18px}.cmp-delta-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;gap:8px}.cmp-delta-row{padding:9px 8px}.cmp-delta-label{font-size:9px;letter-spacing:.55px}.cmp-delta-val{font-size:11px}.cmp-chart-card{padding:10px}.cmp-chart-wrap{height:140px}.cmp-chart-head{align-items:flex-start;flex-direction:column}.cmp-legend{justify-content:flex-start;gap:8px}.cmp-legend-item{font-size:9px;max-width:120px}}
-@media (max-width:360px){.cmp-card{padding:8px}.cmp-title{font-size:18px}.cmp-value{font-size:16px}.cmp-label{font-size:7.5px}.cmp-metric{padding:6px 5px}.cmp-delta-row{padding:8px 6px}.cmp-chart-wrap{height:130px}}
 
 </style>
 
@@ -465,10 +464,14 @@ if ('serviceWorker' in navigator) {
 
         <!-- Exercise comparison -->
         <div class="scard">
-          <div class="stitle">Compare exercises</div>
-          <div id="compareControls"></div>
+          <div class="compare-launch">
+            <div>
+              <div class="stitle" style="margin-bottom:8px;">Exercise comparison</div>
+              <div class="compare-launch-copy">Compare weight, reps and estimated 1RM by exercise and date.</div>
+            </div>
+            <button class="btn btn-sm" style="width:auto;" onclick="clickFeedback(); openExerciseCompare()">Compare</button>
+          </div>
         </div>
-
         <!-- Program Week Card -->
         <div class="scard" id="progWeekCard"></div>
 
@@ -560,19 +563,6 @@ if ('serviceWorker' in navigator) {
   </div>
 </div>
 
-
-<!-- MODAL: Exercise Compare Result -->
-<div class="moverlay" id="mCompareResult">
-  <div class="modal">
-    <div class="mhandle"></div>
-    <div class="mtitle">Comparison</div>
-    <div id="compareResultBody"></div>
-    <div class="mactions">
-      <button class="btn btn-ghost" onclick="clickFeedback(); closeModal('mCompareResult')">Close</button>
-    </div>
-  </div>
-</div>
-
 <!-- MODAL: Active session -->
 <div class="moverlay" id="mSess">
   <div class="modal" id="mSessBody">
@@ -639,6 +629,34 @@ if ('serviceWorker' in navigator) {
     <div class="mactions">
       <button class="btn btn-ghost btn-sm" style="flex:1" onclick="clickFeedback(); closeModal('mGoal')">Cancel</button>
       <button class="btn btn-sm" style="flex:2" onclick="clickFeedback(); saveGoalTotal()">Save</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- MODAL: Exercise Comparison -->
+<div class="moverlay" id="mCompare">
+  <div class="modal" style="max-height:90vh;overflow-y:auto;">
+    <div class="mhandle"></div>
+    <div class="mtitle">Comparison</div>
+    <div class="cmp-select-grid">
+      <div class="cmp-panel">
+        <div class="flabel">Exercise A</div>
+        <select class="fsel" id="cmpExA" onchange="updateCompareDates('A')"></select>
+        <div class="flabel">Date A</div>
+        <select class="fsel" id="cmpDateA"></select>
+      </div>
+      <div class="cmp-panel">
+        <div class="flabel">Exercise B</div>
+        <select class="fsel" id="cmpExB" onchange="updateCompareDates('B')"></select>
+        <div class="flabel">Date B</div>
+        <select class="fsel" id="cmpDateB"></select>
+      </div>
+    </div>
+    <button class="btn" style="margin-top:12px;" onclick="clickFeedback(); renderExerciseCompareResult()">Compare</button>
+    <div id="cmpResult" style="margin-top:14px;"></div>
+    <div class="mactions">
+      <button class="btn btn-ghost" onclick="clickFeedback(); closeModal('mCompare')">Close</button>
     </div>
   </div>
 </div>
@@ -2325,6 +2343,10 @@ function deleteSess(id) {
 
 let editingSessId = null;
 
+function htmlSafe(v) {
+  return String(v ?? '').replace(/[&<>'"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));
+}
+
 function openEditSess(id) {
   const {sessions} = getData();
   const s = sessions.find(x => x.id === id);
@@ -2333,21 +2355,30 @@ function openEditSess(id) {
   document.getElementById('editSessTitle').textContent = s.tplName || 'Session';
   document.getElementById('editSessDate').textContent = fmtDate(s.date);
   const body = document.getElementById('editSessBody');
-  body.innerHTML = s.exercises.map((ex, ei) => `
-    <div class="esex" data-ei="${ei}">
-      <div class="esex-name">${ex.name}</div>
-      <div class="eset-hdr"><span></span><span>Weight kg</span><span>Reps</span><span></span></div>
-      <div class="eset-rows">
-        ${ex.sets.map((st, si) => `
-          <div class="eset-row" data-si="${si}">
-            <div class="eset-num">${si+1}</div>
-            <input class="eset-inp eset-w" type="number" value="${st.weight}" inputmode="decimal" step="0.5" placeholder="kg">
-            <input class="eset-inp eset-r" type="number" value="${st.reps}" inputmode="numeric" placeholder="reps">
-            <button class="eset-del" onclick="removeEditSet(this)" title="Remove set">✕</button>
-          </div>`).join('')}
-      </div>
-      <button class="eset-add" onclick="addEditSet(this)">+ add set</button>
-    </div>`).join('');
+  const knownNames = [...new Set(sessions.flatMap(sess => (sess.exercises || []).map(ex => ex.name).filter(Boolean)))].sort((a,b)=>a.localeCompare(b));
+  const listId = `hist-exercise-names-${id}`;
+  body.innerHTML = `
+    <datalist id="${htmlSafe(listId)}">
+      ${knownNames.map(n => `<option value="${htmlSafe(n)}"></option>`).join('')}
+    </datalist>
+    ${s.exercises.map((ex, ei) => `
+      <div class="esex" data-ei="${ei}">
+        <div class="esex-name">Exercise name</div>
+        <div class="esex-name-edit">
+          <input class="esex-name-input" type="text" value="${htmlSafe(ex.name)}" list="${htmlSafe(listId)}" autocomplete="off" placeholder="Exercise name">
+        </div>
+        <div class="eset-hdr"><span></span><span>Weight kg</span><span>Reps</span><span></span></div>
+        <div class="eset-rows">
+          ${ex.sets.map((st, si) => `
+            <div class="eset-row" data-si="${si}">
+              <div class="eset-num">${si+1}</div>
+              <input class="eset-inp eset-w" type="number" value="${htmlSafe(st.weight)}" inputmode="decimal" step="0.5" placeholder="kg">
+              <input class="eset-inp eset-r" type="number" value="${htmlSafe(st.reps)}" inputmode="numeric" placeholder="reps">
+              <button class="eset-del" onclick="removeEditSet(this)" title="Remove set">✕</button>
+            </div>`).join('')}
+        </div>
+        <button class="eset-add" onclick="addEditSet(this)">+ add set</button>
+      </div>`).join('')}`;
   openModal('mEditSess');
 }
 
@@ -2394,6 +2425,8 @@ function saveEditSess() {
   document.querySelectorAll('#editSessBody .esex').forEach((exEl, ei) => {
     const rows = exEl.querySelectorAll('.eset-row');
     const newSets = [];
+    const nameInput = exEl.querySelector('.esex-name-input');
+    const newName = nameInput ? nameInput.value.trim().replace(/\s+/g, ' ') : '';
     rows.forEach(row => {
       const w = row.querySelector('.eset-w').value.trim();
       const r = row.querySelector('.eset-r').value.trim();
@@ -2403,7 +2436,17 @@ function saveEditSess() {
         newSets.push({ weight: w, reps: r, rpe: origSet ? origSet.rpe : '', restTimerStarted: origSet ? !!origSet.restTimerStarted : false });
       }
     });
-    if(s.exercises[ei]) s.exercises[ei].sets = newSets;
+    if(s.exercises[ei]) {
+      const oldName = s.exercises[ei].name;
+      if(newName) {
+        s.exercises[ei].name = newName;
+        s.exercises.forEach(peer => {
+          if(peer && peer.superset === ei) peer.supersetName = newName;
+          if(peer && peer.supersetName === oldName && peer.superset === ei) peer.supersetName = newName;
+        });
+      }
+      s.exercises[ei].sets = newSets;
+    }
   });
   sessions[sIdx] = s;
   saveSessData(sessions);
@@ -2472,6 +2515,193 @@ function getProgWeekForDate(isoDate) {
   const idx = Math.floor((d - PROG_START) / msPerWeek);
   if(idx < 0 || idx >= PROG_WEEKS.length) return null;
   return PROG_WEEKS[idx];
+}
+
+
+// ── EXERCISE COMPARE ──────────────────────────────────────────
+function getPerformedExerciseNames(sessions) {
+  return [...new Set((sessions || []).flatMap(sess => (sess.exercises || []).map(ex => ex.name).filter(Boolean)))]
+    .sort((a,b)=>a.localeCompare(b));
+}
+
+function getExerciseDates(exName, sessions) {
+  return [...new Set((sessions || [])
+    .filter(sess => (sess.exercises || []).some(ex => ex.name === exName && (ex.sets || []).some(st => (parseFloat(st.weight)||0) > 0 && (parseInt(st.reps)||0) > 0)))
+    .map(sess => sess.date))]
+    .sort((a,b)=>b.localeCompare(a));
+}
+
+function bestSetForExerciseOnDate(exName, date, sessions) {
+  let best = null;
+  (sessions || []).filter(sess => sess.date === date).forEach(sess => {
+    (sess.exercises || []).filter(ex => ex.name === exName).forEach(ex => {
+      (ex.sets || []).forEach(st => {
+        const w = parseFloat(st.weight) || 0;
+        const r = parseInt(st.reps) || 0;
+        if(w > 0 && r > 0) {
+          const est = e1rm(w, r);
+          if(!best || est > best.e || (est === best.e && w > best.w) || (est === best.e && w === best.w && r > best.r)) {
+            best = {w, r, e: est, date, exName};
+          }
+        }
+      });
+    });
+  });
+  return best;
+}
+
+function exerciseProgressSeries(exName, sessions) {
+  return getExerciseDates(exName, sessions).map(date => bestSetForExerciseOnDate(exName, date, sessions)).filter(Boolean).sort((a,b)=>a.date.localeCompare(b.date));
+}
+
+function openExerciseCompare() {
+  const {sessions} = getData();
+  const names = getPerformedExerciseNames(sessions);
+  const a = document.getElementById('cmpExA');
+  const b = document.getElementById('cmpExB');
+  const result = document.getElementById('cmpResult');
+  if(!a || !b || !result) return;
+  if(!names.length) {
+    result.innerHTML = `<div class="cmp-empty">No completed exercises yet.</div>`;
+    openModal('mCompare');
+    return;
+  }
+  const opts = names.map(n => `<option value="${htmlSafe(n)}">${htmlSafe(n)}</option>`).join('');
+  a.innerHTML = opts;
+  b.innerHTML = opts;
+  b.selectedIndex = Math.min(1, names.length - 1);
+  updateCompareDates('A');
+  updateCompareDates('B');
+  result.innerHTML = '';
+  openModal('mCompare');
+}
+
+function updateCompareDates(side) {
+  const {sessions} = getData();
+  const exSel = document.getElementById('cmpEx' + side);
+  const dateSel = document.getElementById('cmpDate' + side);
+  if(!exSel || !dateSel) return;
+  const dates = getExerciseDates(exSel.value, sessions);
+  dateSel.innerHTML = dates.map(d => `<option value="${htmlSafe(d)}">${fmtDate(d)}</option>`).join('');
+}
+
+function fmtSigned(n, suffix='') {
+  if(!Number.isFinite(n)) return '0' + suffix;
+  const sign = n > 0 ? '+' : '';
+  return sign + Math.round(n * 10) / 10 + suffix;
+}
+
+function pctDiff(a, b) {
+  if(!a) return 0;
+  return ((b - a) / a) * 100;
+}
+
+function renderExerciseCompareResult() {
+  const {sessions} = getData();
+  const exA = document.getElementById('cmpExA').value;
+  const exB = document.getElementById('cmpExB').value;
+  const dateA = document.getElementById('cmpDateA').value;
+  const dateB = document.getElementById('cmpDateB').value;
+  const el = document.getElementById('cmpResult');
+  const a = bestSetForExerciseOnDate(exA, dateA, sessions);
+  const b = bestSetForExerciseOnDate(exB, dateB, sessions);
+  if(!a || !b) {
+    el.innerHTML = `<div class="cmp-empty">Pick two exercises and dates with logged weight and reps.</div>`;
+    return;
+  }
+  const dw = b.w - a.w;
+  const dr = b.r - a.r;
+  const de = b.e - a.e;
+  const wp = pctDiff(a.w, b.w);
+  const rp = pctDiff(a.r, b.r);
+  const ep = pctDiff(a.e, b.e);
+  const leader = de > 0 ? exB : de < 0 ? exA : 'Both';
+  const summary = de === 0
+    ? `Both are even by estimated 1RM. Weight difference: ${fmtSigned(dw, 'kg')} (${fmtSigned(wp, '%')}). Reps difference: ${fmtSigned(dr)} (${fmtSigned(rp, '%')}).`
+    : `${htmlSafe(leader)} is ahead by ${Math.abs(Math.round(de))}kg e1RM (${Math.abs(Math.round(ep))}%). Weight difference: ${fmtSigned(dw, 'kg')} (${fmtSigned(wp, '%')}). Reps difference: ${fmtSigned(dr)} (${fmtSigned(rp, '%')}).`;
+  el.innerHTML = `
+    <div class="cmp-result-grid">
+      ${compareCard('Exercise A', exA, dateA, a)}
+      ${compareCard('Exercise B', exB, dateB, b)}
+    </div>
+    <div class="cmp-diff-grid">
+      ${diffCard('Weight difference', `${fmtSigned(dw, 'kg')} (${fmtSigned(wp, '%')})`)}
+      ${diffCard('Reps difference', `${fmtSigned(dr)} (${fmtSigned(rp, '%')})`)}
+      ${diffCard('Best set difference', `${a.w}×${a.r} vs ${b.w}×${b.r}`)}
+      ${diffCard('e1RM difference', `${fmtSigned(de, 'kg')} (${fmtSigned(ep, '%')})`)}
+    </div>
+    <div class="cmp-summary">${summary}</div>
+    <div class="cmp-chart-card">
+      <div class="cmp-label">Progress line</div>
+      <div class="cmp-legend"><span><span class="cmp-dot cmp-dot-a"></span>${htmlSafe(exA)}</span><span><span class="cmp-dot cmp-dot-b"></span>${htmlSafe(exB)}</span></div>
+      <div class="cmp-chart">${renderCompareChart(exA, exB, dateA, dateB, sessions)}</div>
+    </div>`;
+}
+
+function compareCard(label, exName, date, data) {
+  return `<div class="cmp-card">
+    <div class="cmp-label">${label}</div>
+    <div class="cmp-ex-name">${htmlSafe(exName)}</div>
+    <div class="cmp-date">${fmtDate(date)}</div>
+    <div class="cmp-stats">
+      ${statCell('Weight', `${data.w}kg`)}
+      ${statCell('Reps', `${data.r}`)}
+      ${statCell('Best set', `${data.w}×${data.r}`)}
+      ${statCell('e1RM', `${data.e}kg`)}
+    </div>
+  </div>`;
+}
+function statCell(k, v) { return `<div class="cmp-stat"><div class="cmp-stat-k">${k}</div><div class="cmp-stat-v">${v}</div></div>`; }
+function diffCard(k, v) { return `<div class="cmp-diff"><div class="cmp-label">${k}</div><div class="cmp-diff-v">${v}</div></div>`; }
+
+function renderCompareChart(exA, exB, dateA, dateB, sessions) {
+  const w = 620, h = 190, padL = 54, padR = 24, padT = 18, padB = 34;
+  let seriesA = exerciseProgressSeries(exA, sessions);
+  let seriesB = exerciseProgressSeries(exB, sessions);
+  const same = exA === exB;
+  const pointA = bestSetForExerciseOnDate(exA, dateA, sessions);
+  const pointB = bestSetForExerciseOnDate(exB, dateB, sessions);
+  if(same && pointA && pointB) {
+    const minD = [dateA, dateB].sort()[0];
+    const maxD = [dateA, dateB].sort()[1];
+    seriesA = [{...pointA, date:minD}, {...pointA, date:maxD}];
+    seriesB = [{...pointB, date:minD}, {...pointB, date:maxD}];
+  }
+  const all = [...seriesA, ...seriesB];
+  if(all.length < 2) return `<div class="cmp-empty">Not enough history for a chart.</div>`;
+  const dates = [...new Set(all.map(p=>p.date))].sort((a,b)=>a.localeCompare(b));
+  const vals = all.map(p=>p.e);
+  let minV = Math.min(...vals), maxV = Math.max(...vals);
+  if(minV === maxV) { minV -= 5; maxV += 5; }
+  const yPad = Math.max(2, (maxV - minV) * 0.15);
+  minV = Math.max(0, Math.floor(minV - yPad));
+  maxV = Math.ceil(maxV + yPad);
+  const xFor = date => {
+    const i = dates.indexOf(date);
+    return dates.length === 1 ? (padL + (w-padL-padR)/2) : padL + (i / (dates.length - 1)) * (w - padL - padR);
+  };
+  const yFor = val => padT + (1 - ((val - minV) / (maxV - minV))) * (h - padT - padB);
+  const pathFor = pts => pts.map((p,i)=>`${i?'L':'M'} ${xFor(p.date).toFixed(1)} ${yFor(p.e).toFixed(1)}`).join(' ');
+  const dotsFor = (pts, clsColor) => pts.map(p=>`<circle cx="${xFor(p.date).toFixed(1)}" cy="${yFor(p.e).toFixed(1)}" r="4.5" fill="${clsColor}"/>`).join('');
+  const y1 = yFor(minV), y2 = yFor(Math.round((minV+maxV)/2)), y3 = yFor(maxV);
+  const firstLabel = fmtDate(dates[0]).replace(', 2026','');
+  const lastLabel = fmtDate(dates[dates.length-1]).replace(', 2026','');
+  return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+    <line x1="${padL}" y1="${y3}" x2="${w-padR}" y2="${y3}" stroke="rgba(255,255,255,.06)"/>
+    <line x1="${padL}" y1="${y2}" x2="${w-padR}" y2="${y2}" stroke="rgba(255,255,255,.06)"/>
+    <line x1="${padL}" y1="${y1}" x2="${w-padR}" y2="${y1}" stroke="rgba(255,255,255,.06)"/>
+    <line x1="${padL}" y1="${padT}" x2="${padL}" y2="${h-padB}" stroke="rgba(255,255,255,.12)"/>
+    <line x1="${padL}" y1="${h-padB}" x2="${w-padR}" y2="${h-padB}" stroke="rgba(255,255,255,.12)"/>
+    <text x="8" y="${y3+4}" fill="rgba(255,255,255,.28)" font-size="12">${maxV}</text>
+    <text x="8" y="${y2+4}" fill="rgba(255,255,255,.28)" font-size="12">${Math.round((minV+maxV)/2)}</text>
+    <text x="8" y="${y1+4}" fill="rgba(255,255,255,.28)" font-size="12">${minV}</text>
+    <path d="${pathFor(seriesA)}" fill="none" stroke="#cc2222" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="${pathFor(seriesB)}" fill="none" stroke="#ffffff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    ${dotsFor(seriesA, '#cc2222')}
+    ${dotsFor(seriesB, '#ffffff')}
+    <text x="${padL}" y="${h-8}" fill="rgba(255,255,255,.28)" font-size="12">${firstLabel}</text>
+    <text x="${w-padR}" y="${h-8}" fill="rgba(255,255,255,.28)" text-anchor="end" font-size="12">${lastLabel}</text>
+  </svg>`;
 }
 
 // ── STATS ─────────────────────────────────────────────────────
@@ -2621,253 +2851,8 @@ function getTopSetForLift(liftKey, sessions) {
   return best;
 }
 
-
-// ── EXERCISE COMPARE ──────────────────────────────────────────
-function getPerformedExerciseNames(sessions) {
-  const names = new Set();
-  sessions.forEach(sess => {
-    (sess.exercises || []).forEach(ex => {
-      const hasValidSet = (ex.sets || []).some(st => (parseFloat(st.weight) || 0) > 0 && (parseInt(st.reps) || 0) > 0);
-      if(ex.name && hasValidSet) names.add(ex.name);
-    });
-  });
-  return [...names].sort((a,b) => a.localeCompare(b));
-}
-
-function getDatesForExercise(exName, sessions) {
-  const dates = new Set();
-  if(!exName) return [];
-  sessions.forEach(sess => {
-    const didIt = (sess.exercises || []).some(ex => ex.name === exName && (ex.sets || []).some(st => (parseFloat(st.weight) || 0) > 0 && (parseInt(st.reps) || 0) > 0));
-    if(didIt && sess.date) dates.add(sess.date);
-  });
-  return [...dates].sort((a,b) => b.localeCompare(a));
-}
-
-function escapeHtml(v) {
-  return String(v ?? '').replace(/[&<>'"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));
-}
-
-function renderCompareControls(sessions) {
-  const root = document.getElementById('compareControls');
-  if(!root) return;
-  const exercises = getPerformedExerciseNames(sessions);
-  if(!exercises.length) {
-    root.innerHTML = '<div class="compare-empty">No completed exercises yet. Finish a workout first, then come back to compare.</div>';
-    return;
-  }
-  const curA = document.getElementById('cmpExA')?.value || exercises[0] || '';
-  const curB = document.getElementById('cmpExB')?.value || exercises[Math.min(1, exercises.length - 1)] || exercises[0] || '';
-  const exA = exercises.includes(curA) ? curA : exercises[0];
-  const exB = exercises.includes(curB) ? curB : (exercises[Math.min(1, exercises.length - 1)] || exercises[0]);
-  const optsA = exercises.map(n => `<option value="${escapeHtml(n)}" ${n===exA?'selected':''}>${escapeHtml(n)}</option>`).join('');
-  const optsB = exercises.map(n => `<option value="${escapeHtml(n)}" ${n===exB?'selected':''}>${escapeHtml(n)}</option>`).join('');
-  root.innerHTML = `
-    <div class="compare-grid">
-      <div class="compare-box">
-        <div class="compare-box-title">Exercise A</div>
-        <select class="ex-sel" id="cmpExA" onchange="clickFeedback(); updateCompareDates('A')">${optsA}</select>
-        <select class="ex-sel" id="cmpDateA"></select>
-      </div>
-      <div class="compare-box">
-        <div class="compare-box-title">Exercise B</div>
-        <select class="ex-sel" id="cmpExB" onchange="clickFeedback(); updateCompareDates('B')">${optsB}</select>
-        <select class="ex-sel" id="cmpDateB"></select>
-      </div>
-    </div>
-    <button class="btn" onclick="clickFeedback(); openCompareResult()">Compare</button>
-  `;
-  updateCompareDates('A');
-  updateCompareDates('B');
-}
-
-function updateCompareDates(side) {
-  const {sessions} = getData();
-  const exEl = document.getElementById('cmpEx' + side);
-  const dateEl = document.getElementById('cmpDate' + side);
-  if(!exEl || !dateEl) return;
-  const prev = dateEl.value;
-  const dates = getDatesForExercise(exEl.value, sessions);
-  dateEl.innerHTML = dates.map(d => `<option value="${escapeHtml(d)}" ${d===prev?'selected':''}>${fmtDate(d)}</option>`).join('');
-}
-
-function summarizeExerciseOnDate(exName, date, sessions) {
-  const sets = [];
-  sessions.filter(s => s.date === date).forEach(sess => {
-    (sess.exercises || []).filter(ex => ex.name === exName).forEach(ex => {
-      (ex.sets || []).forEach(st => {
-        const w = parseFloat(st.weight) || 0;
-        const r = parseInt(st.reps) || 0;
-        if(w > 0 && r > 0) sets.push({w, r, e: e1rm(w, r)});
-      });
-    });
-  });
-  if(!sets.length) return null;
-  const totalReps = sets.reduce((sum, st) => sum + st.r, 0);
-  const maxWeight = Math.max(...sets.map(st => st.w));
-  const bestSet = sets.slice().sort((a,b) => b.e - a.e || b.w - a.w || b.r - a.r)[0];
-  return {exName, date, sets: sets.length, totalReps, maxWeight, bestSet, weight: bestSet.w, reps: bestSet.r, e1rm: bestSet.e};
-}
-
-function formatKg(v) {
-  const n = Math.round((v || 0) * 10) / 10;
-  return Number.isInteger(n) ? String(n) : n.toFixed(1);
-}
-
-function metricDelta(a, b, key, suffix='') {
-  const av = a[key] || 0, bv = b[key] || 0;
-  const diff = av - bv;
-  const pct = bv ? Math.round((diff / bv) * 100) : null;
-  const sign = diff > 0 ? '+' : '';
-  const pctTxt = pct === null ? '' : ` (${sign}${pct}%)`;
-  return `${sign}${formatKg(diff)}${suffix}${pctTxt}`;
-}
-
-function compareCard(x, label) {
-  return `
-    <div class="cmp-card">
-      <div class="cmp-label">${label}</div>
-      <div class="cmp-title">${escapeHtml(x.exName)}</div>
-      <div class="cmp-date">${fmtDate(x.date)}</div>
-      <div class="cmp-metrics">
-        <div class="cmp-metric"><div class="cmp-label">Weight</div><div class="cmp-value">${formatKg(x.weight)}kg</div></div>
-        <div class="cmp-metric"><div class="cmp-label">Reps</div><div class="cmp-value">${x.reps}</div></div>
-        <div class="cmp-metric"><div class="cmp-label">Best set</div><div class="cmp-value">${formatKg(x.bestSet.w)}×${x.bestSet.r}</div></div>
-        <div class="cmp-metric"><div class="cmp-label">e1RM</div><div class="cmp-value">${formatKg(x.e1rm)}kg</div></div>
-      </div>
-    </div>`;
-}
-
-function getProgressPoints(exName, sessions) {
-  const byDate = {};
-  sessions.forEach(sess => {
-    (sess.exercises || []).filter(ex => ex.name === exName).forEach(ex => {
-      (ex.sets || []).forEach(st => {
-        const w = parseFloat(st.weight) || 0;
-        const r = parseInt(st.reps) || 0;
-        if(w <= 0 || r <= 0 || !sess.date) return;
-        const est = e1rm(w, r);
-        const cur = byDate[sess.date];
-        if(!cur || est > cur.e || (est === cur.e && w > cur.w)) byDate[sess.date] = {date:sess.date, w, r, e:est};
-      });
-    });
-  });
-  return Object.values(byDate).sort((a,b) => a.date.localeCompare(b.date)).slice(-8);
-}
-
-function buildCompareChart(a, b, sessions) {
-  const sameExercise = a.exName === b.exName;
-  const selectedDates = [a.date, b.date].filter(Boolean).sort((x,y) => x.localeCompare(y));
-
-  function drawChart(aPts, bPts, mode) {
-    const all = [...aPts, ...bPts];
-    if(all.length < 2) return '<div class="cmp-chart-empty">Not enough history yet for a progress chart.</div>';
-    const dates = [...new Set(all.map(p => p.date))].sort((x,y) => x.localeCompare(y));
-    const values = all.map(p => p.e);
-    const min = Math.min(...values);
-    const max = Math.max(...values);
-    const pad = max === min ? 10 : Math.max(5, Math.round((max - min) * 0.25));
-    const yMin = Math.max(0, min - pad);
-    const yMax = max + pad;
-    const w = 320, h = 150, left = 34, right = 10, top = 12, bottom = 28;
-    const xFor = d => dates.length === 1 ? left + (w-left-right)/2 : left + (dates.indexOf(d) * (w-left-right) / (dates.length - 1));
-    const yFor = v => top + (yMax - v) * (h-top-bottom) / Math.max(1, yMax - yMin);
-    const pathFor = pts => pts.map((p,i) => `${i?'L':'M'}${xFor(p.date).toFixed(1)} ${yFor(p.e).toFixed(1)}`).join(' ');
-    const circlesFor = (pts, cls) => pts.map(p => `<circle cx="${xFor(p.date).toFixed(1)}" cy="${yFor(p.e).toFixed(1)}" r="3.5" class="${cls}"><title>${fmtDate(p.date)} · ${formatKg(p.w)}×${p.r} · e1RM ${formatKg(p.e)}kg</title></circle>`).join('');
-    const yTicks = [yMin, Math.round((yMin + yMax) / 2), yMax];
-    const xLabels = dates.length > 4 ? [dates[0], dates[Math.floor((dates.length-1)/2)], dates[dates.length-1]] : dates;
-    const referenceLines = mode === 'sameExercise' ? `
-      <line x1="${left}" y1="${yFor(a.e1rm).toFixed(1)}" x2="${w-right}" y2="${yFor(a.e1rm).toFixed(1)}" class="lineA"></line>
-      <line x1="${left}" y1="${yFor(b.e1rm).toFixed(1)}" x2="${w-right}" y2="${yFor(b.e1rm).toFixed(1)}" class="lineB"></line>
-    ` : '';
-    return `
-      <svg viewBox="0 0 ${w} ${h}" role="img" aria-label="e1RM comparison chart">
-        <style>
-          .axis{stroke:var(--bg5);stroke-width:1}.grid{stroke:var(--bg4);stroke-width:1;opacity:.6}.txt{fill:var(--text3);font-size:9px;font-family:'DM Sans',sans-serif}.lineA{fill:none;stroke:#cc2222;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}.lineB{fill:none;stroke:var(--white);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}.dotA{fill:#cc2222;stroke:var(--bg3);stroke-width:1}.dotB{fill:var(--white);stroke:var(--bg3);stroke-width:1}
-        </style>
-        ${yTicks.map(t => `<line class="grid" x1="${left}" y1="${yFor(t).toFixed(1)}" x2="${w-right}" y2="${yFor(t).toFixed(1)}"></line><text class="txt" x="4" y="${(yFor(t)+3).toFixed(1)}">${formatKg(t)}</text>`).join('')}
-        <line class="axis" x1="${left}" y1="${h-bottom}" x2="${w-right}" y2="${h-bottom}"></line>
-        <line class="axis" x1="${left}" y1="${top}" x2="${left}" y2="${h-bottom}"></line>
-        ${referenceLines}
-        ${mode !== 'sameExercise' && aPts.length > 1 ? `<path d="${pathFor(aPts)}" class="lineA"></path>` : ''}
-        ${mode !== 'sameExercise' && bPts.length > 1 ? `<path d="${pathFor(bPts)}" class="lineB"></path>` : ''}
-        ${circlesFor(aPts, 'dotA')}
-        ${circlesFor(bPts, 'dotB')}
-        ${xLabels.map(d => `<text class="txt" text-anchor="middle" x="${xFor(d).toFixed(1)}" y="${h-8}">${fmtDate(d).slice(0,6)}</text>`).join('')}
-      </svg>`;
-  }
-
-  if(sameExercise) {
-    const aPts = [{date:a.date, w:a.weight, r:a.reps, e:a.e1rm}];
-    const bPts = [{date:b.date, w:b.weight, r:b.reps, e:b.e1rm}];
-    return drawChart(aPts, bPts, 'sameExercise');
-  }
-
-  const aPts = getProgressPoints(a.exName, sessions);
-  const bPts = getProgressPoints(b.exName, sessions);
-  return drawChart(aPts, bPts, 'history');
-}
-
-function metricSummary(a, b) {
-  const weight = metricDelta(a, b, 'weight', 'kg');
-  const reps = metricDelta(a, b, 'reps');
-  const e = metricDelta(a, b, 'e1rm', 'kg');
-  if(a.e1rm === b.e1rm) return `Same estimated strength. Weight: ${weight}. Reps: ${reps}.`;
-  const winner = a.e1rm > b.e1rm ? a : b;
-  const loser = a.e1rm > b.e1rm ? b : a;
-  const pct = loser.e1rm ? Math.round(((winner.e1rm - loser.e1rm) / loser.e1rm) * 100) : null;
-  return `${escapeHtml(winner.exName)} is ahead by ${formatKg(winner.e1rm - loser.e1rm)}kg e1RM${pct !== null ? ` (${pct}%)` : ''}. Weight difference: ${weight}. Reps difference: ${reps}.`;
-}
-
-function openCompareResult() {
-  const {sessions} = getData();
-  const exA = document.getElementById('cmpExA')?.value;
-  const exB = document.getElementById('cmpExB')?.value;
-  const dateA = document.getElementById('cmpDateA')?.value;
-  const dateB = document.getElementById('cmpDateB')?.value;
-  const body = document.getElementById('compareResultBody');
-  if(!body) return;
-  if(!exA || !exB || !dateA || !dateB) {
-    body.innerHTML = '<div class="compare-empty">Choose both exercises and both dates first.</div>';
-    openModal('mCompareResult');
-    return;
-  }
-  const a = summarizeExerciseOnDate(exA, dateA, sessions);
-  const b = summarizeExerciseOnDate(exB, dateB, sessions);
-  if(!a || !b) {
-    body.innerHTML = '<div class="compare-empty">Could not find valid sets for that comparison.</div>';
-    openModal('mCompareResult');
-    return;
-  }
-  body.innerHTML = `
-    <div class="cmp-result-grid" style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;width:100%;">
-      ${compareCard(a, 'Exercise A')}
-      ${compareCard(b, 'Exercise B')}
-    </div>
-    <div class="cmp-delta-grid" style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;width:100%;">
-      <div class="cmp-delta-row"><div class="cmp-delta-label">Weight difference</div><div class="cmp-delta-val">${metricDelta(a,b,'weight','kg')}</div></div>
-      <div class="cmp-delta-row"><div class="cmp-delta-label">Reps difference</div><div class="cmp-delta-val">${metricDelta(a,b,'reps')}</div></div>
-      <div class="cmp-delta-row"><div class="cmp-delta-label">Best set difference</div><div class="cmp-delta-val">${formatKg(a.bestSet.w)}×${a.bestSet.r} vs ${formatKg(b.bestSet.w)}×${b.bestSet.r}</div></div>
-      <div class="cmp-delta-row"><div class="cmp-delta-label">e1RM difference</div><div class="cmp-delta-val">${metricDelta(a,b,'e1rm','kg')}</div></div>
-    </div>
-    <div class="cmp-summary">${metricSummary(a,b)}</div>
-    <div class="cmp-chart-card">
-      <div class="cmp-chart-head">
-        <div class="cmp-chart-title">e1RM comparison</div>
-        <div class="cmp-legend">
-          <div class="cmp-legend-item"><span class="cmp-legend-dot a"></span>${escapeHtml(exA)}</div>
-          <div class="cmp-legend-item"><span class="cmp-legend-dot b"></span>${escapeHtml(exB)}</div>
-        </div>
-      </div>
-      <div class="cmp-chart-wrap">${buildCompareChart(a, b, sessions)}</div>
-    </div>
-  `;
-  openModal('mCompareResult');
-}
-
 function renderStats() {
   const {sessions} = getData();
-  renderCompareControls(sessions);
   renderStreak(sessions);
   renderFreq(sessions);
   renderProgWeekCard();
