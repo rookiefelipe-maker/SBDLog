@@ -319,6 +319,24 @@ html,body{height:100%;background:var(--bg0);color:var(--text1);font-family:'DM S
 .topset-badge{font-size:9px;font-weight:700;letter-spacing:1px;color:#cc2222;text-transform:uppercase;margin-left:6px;}
 .wc-delta.up{color:var(--white);}
 
+/* EXERCISE COMPARE */
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+.compare-box{background:var(--bg3);border:1px solid var(--bg4);border-radius:var(--rs);padding:12px;}
+.compare-box-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--text3);margin-bottom:10px;}
+.compare-empty{font-size:13px;color:var(--text3);line-height:1.5;}
+.cmp-card{background:var(--bg3);border:1px solid var(--bg4);border-radius:var(--rs);padding:12px;margin-bottom:10px;}
+.cmp-title{font-family:'Bebas Neue',sans-serif;font-size:28px;line-height:1;color:var(--white);letter-spacing:1px;}
+.cmp-date{font-size:12px;color:var(--text3);margin-top:3px;}
+.cmp-metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;}
+.cmp-metric{background:var(--bg2);border-radius:8px;padding:9px;}
+.cmp-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:3px;}
+.cmp-value{font-family:'Bebas Neue',sans-serif;font-size:26px;line-height:1;color:var(--white);}
+.cmp-delta-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--bg3);gap:10px;}
+.cmp-delta-row:last-child{border-bottom:none;}
+.cmp-delta-label{font-size:13px;color:var(--text2);}
+.cmp-delta-val{font-size:13px;font-weight:700;color:var(--white);text-align:right;}
+@media (max-width:450px){.compare-grid{gap:8px}.compare-box{padding:10px}.cmp-metrics{grid-template-columns:1fr}}
+
 </style>
 
 <script>
@@ -429,6 +447,13 @@ if ('serviceWorker' in navigator) {
       <!-- STATS -->
       <div class="subview" id="sv-statsview">
 
+
+        <!-- Exercise comparison -->
+        <div class="scard">
+          <div class="stitle">Compare exercises</div>
+          <div id="compareControls"></div>
+        </div>
+
         <!-- Program Week Card -->
         <div class="scard" id="progWeekCard"></div>
 
@@ -516,6 +541,19 @@ if ('serviceWorker' in navigator) {
     <div class="mactions">
       <button class="btn btn-ghost btn-sm" style="flex:1" onclick="clickFeedback(); closeModal('mEx')">Cancel</button>
       <button class="btn btn-sm" style="flex:2" onclick="clickFeedback(); saveEx()">Save</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- MODAL: Exercise Compare Result -->
+<div class="moverlay" id="mCompareResult">
+  <div class="modal">
+    <div class="mhandle"></div>
+    <div class="mtitle">Comparison</div>
+    <div id="compareResultBody"></div>
+    <div class="mactions">
+      <button class="btn btn-ghost" onclick="clickFeedback(); closeModal('mCompareResult')">Close</button>
     </div>
   </div>
 </div>
@@ -2568,8 +2606,168 @@ function getTopSetForLift(liftKey, sessions) {
   return best;
 }
 
+
+// ── EXERCISE COMPARE ──────────────────────────────────────────
+function getPerformedExerciseNames(sessions) {
+  const names = new Set();
+  sessions.forEach(sess => {
+    (sess.exercises || []).forEach(ex => {
+      const hasValidSet = (ex.sets || []).some(st => (parseFloat(st.weight) || 0) > 0 && (parseInt(st.reps) || 0) > 0);
+      if(ex.name && hasValidSet) names.add(ex.name);
+    });
+  });
+  return [...names].sort((a,b) => a.localeCompare(b));
+}
+
+function getDatesForExercise(exName, sessions) {
+  const dates = new Set();
+  if(!exName) return [];
+  sessions.forEach(sess => {
+    const didIt = (sess.exercises || []).some(ex => ex.name === exName && (ex.sets || []).some(st => (parseFloat(st.weight) || 0) > 0 && (parseInt(st.reps) || 0) > 0));
+    if(didIt && sess.date) dates.add(sess.date);
+  });
+  return [...dates].sort((a,b) => b.localeCompare(a));
+}
+
+function escapeHtml(v) {
+  return String(v ?? '').replace(/[&<>'"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));
+}
+
+function renderCompareControls(sessions) {
+  const root = document.getElementById('compareControls');
+  if(!root) return;
+  const exercises = getPerformedExerciseNames(sessions);
+  if(!exercises.length) {
+    root.innerHTML = '<div class="compare-empty">No completed exercises yet. Finish a workout first, then come back to compare.</div>';
+    return;
+  }
+  const curA = document.getElementById('cmpExA')?.value || exercises[0] || '';
+  const curB = document.getElementById('cmpExB')?.value || exercises[Math.min(1, exercises.length - 1)] || exercises[0] || '';
+  const exA = exercises.includes(curA) ? curA : exercises[0];
+  const exB = exercises.includes(curB) ? curB : (exercises[Math.min(1, exercises.length - 1)] || exercises[0]);
+  const optsA = exercises.map(n => `<option value="${escapeHtml(n)}" ${n===exA?'selected':''}>${escapeHtml(n)}</option>`).join('');
+  const optsB = exercises.map(n => `<option value="${escapeHtml(n)}" ${n===exB?'selected':''}>${escapeHtml(n)}</option>`).join('');
+  root.innerHTML = `
+    <div class="compare-grid">
+      <div class="compare-box">
+        <div class="compare-box-title">Exercise A</div>
+        <select class="ex-sel" id="cmpExA" onchange="clickFeedback(); updateCompareDates('A')">${optsA}</select>
+        <select class="ex-sel" id="cmpDateA"></select>
+      </div>
+      <div class="compare-box">
+        <div class="compare-box-title">Exercise B</div>
+        <select class="ex-sel" id="cmpExB" onchange="clickFeedback(); updateCompareDates('B')">${optsB}</select>
+        <select class="ex-sel" id="cmpDateB"></select>
+      </div>
+    </div>
+    <button class="btn" onclick="clickFeedback(); openCompareResult()">Compare</button>
+  `;
+  updateCompareDates('A');
+  updateCompareDates('B');
+}
+
+function updateCompareDates(side) {
+  const {sessions} = getData();
+  const exEl = document.getElementById('cmpEx' + side);
+  const dateEl = document.getElementById('cmpDate' + side);
+  if(!exEl || !dateEl) return;
+  const prev = dateEl.value;
+  const dates = getDatesForExercise(exEl.value, sessions);
+  dateEl.innerHTML = dates.map(d => `<option value="${escapeHtml(d)}" ${d===prev?'selected':''}>${fmtDate(d)}</option>`).join('');
+}
+
+function summarizeExerciseOnDate(exName, date, sessions) {
+  const sets = [];
+  sessions.filter(s => s.date === date).forEach(sess => {
+    (sess.exercises || []).filter(ex => ex.name === exName).forEach(ex => {
+      (ex.sets || []).forEach(st => {
+        const w = parseFloat(st.weight) || 0;
+        const r = parseInt(st.reps) || 0;
+        if(w > 0 && r > 0) sets.push({w, r, e: e1rm(w, r), volume: w * r});
+      });
+    });
+  });
+  if(!sets.length) return null;
+  const totalReps = sets.reduce((sum, st) => sum + st.r, 0);
+  const volume = sets.reduce((sum, st) => sum + st.volume, 0);
+  const maxWeight = Math.max(...sets.map(st => st.w));
+  const bestSet = sets.slice().sort((a,b) => b.e - a.e || b.w - a.w || b.r - a.r)[0];
+  return {exName, date, sets: sets.length, totalReps, volume, maxWeight, bestSet, e1rm: bestSet.e};
+}
+
+function formatKg(v) {
+  const n = Math.round((v || 0) * 10) / 10;
+  return Number.isInteger(n) ? String(n) : n.toFixed(1);
+}
+
+function metricDelta(a, b, key, suffix='') {
+  const av = a[key] || 0, bv = b[key] || 0;
+  const diff = av - bv;
+  const pct = bv ? Math.round((diff / bv) * 100) : null;
+  const sign = diff > 0 ? '+' : '';
+  const pctTxt = pct === null ? '' : ` (${sign}${pct}%)`;
+  return `${sign}${formatKg(diff)}${suffix}${pctTxt}`;
+}
+
+function compareCard(x, label) {
+  return `
+    <div class="cmp-card">
+      <div class="cmp-label">${label}</div>
+      <div class="cmp-title">${escapeHtml(x.exName)}</div>
+      <div class="cmp-date">${fmtDate(x.date)}</div>
+      <div class="cmp-metrics">
+        <div class="cmp-metric"><div class="cmp-label">Best set</div><div class="cmp-value">${formatKg(x.bestSet.w)}×${x.bestSet.r}</div></div>
+        <div class="cmp-metric"><div class="cmp-label">e1RM</div><div class="cmp-value">${formatKg(x.e1rm)}kg</div></div>
+        <div class="cmp-metric"><div class="cmp-label">Total reps</div><div class="cmp-value">${x.totalReps}</div></div>
+        <div class="cmp-metric"><div class="cmp-label">Volume</div><div class="cmp-value">${formatKg(x.volume)}kg</div></div>
+      </div>
+    </div>`;
+}
+
+function openCompareResult() {
+  const {sessions} = getData();
+  const exA = document.getElementById('cmpExA')?.value;
+  const exB = document.getElementById('cmpExB')?.value;
+  const dateA = document.getElementById('cmpDateA')?.value;
+  const dateB = document.getElementById('cmpDateB')?.value;
+  const body = document.getElementById('compareResultBody');
+  if(!body) return;
+  if(!exA || !exB || !dateA || !dateB) {
+    body.innerHTML = '<div class="compare-empty">Choose both exercises and both dates first.</div>';
+    openModal('mCompareResult');
+    return;
+  }
+  const a = summarizeExerciseOnDate(exA, dateA, sessions);
+  const b = summarizeExerciseOnDate(exB, dateB, sessions);
+  if(!a || !b) {
+    body.innerHTML = '<div class="compare-empty">Could not find valid sets for that comparison.</div>';
+    openModal('mCompareResult');
+    return;
+  }
+  let volumeWinner = 'Same volume.';
+  if(a.volume !== b.volume) {
+    const winner = a.volume > b.volume ? a : b;
+    const loser = a.volume > b.volume ? b : a;
+    const pct = loser.volume ? Math.round(((winner.volume - loser.volume) / loser.volume) * 100) : null;
+    volumeWinner = `${escapeHtml(winner.exName)} had ${formatKg(winner.volume - loser.volume)}kg${pct !== null ? ` (${pct}%)` : ''} more volume.`;
+  }
+  body.innerHTML = `
+    ${compareCard(a, 'Exercise A')}
+    ${compareCard(b, 'Exercise B')}
+    <div class="cmp-card">
+      <div class="cmp-delta-row"><div class="cmp-delta-label">Max weight difference</div><div class="cmp-delta-val">${metricDelta(a,b,'maxWeight','kg')}</div></div>
+      <div class="cmp-delta-row"><div class="cmp-delta-label">Total reps difference</div><div class="cmp-delta-val">${metricDelta(a,b,'totalReps')}</div></div>
+      <div class="cmp-delta-row"><div class="cmp-delta-label">Volume difference</div><div class="cmp-delta-val">${metricDelta(a,b,'volume','kg')}</div></div>
+      <div class="cmp-delta-row"><div class="cmp-delta-label">e1RM difference</div><div class="cmp-delta-val">${metricDelta(a,b,'e1rm','kg')}</div></div>
+    </div>
+    <div style="font-size:13px;color:var(--text3);line-height:1.5;">${volumeWinner}</div>
+  `;
+  openModal('mCompareResult');
+}
+
 function renderStats() {
   const {sessions} = getData();
+  renderCompareControls(sessions);
   renderStreak(sessions);
   renderFreq(sessions);
   renderProgWeekCard();
