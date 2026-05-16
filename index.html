@@ -356,6 +356,26 @@ html,body{height:100%;background:var(--bg0);color:var(--text1);font-family:'DM S
 .plate-2-5{height:18px;background:#555;}
 .plate-1-25{height:15px;background:#333;}
 .plate-preview-note{font-size:10px;color:var(--text3);margin-top:5px;}
+.week-row{gap:10px;}
+.week-left{min-width:0;flex:1;}
+.week-right{flex-shrink:0;}
+.week-plate-mini{width:76px;min-width:76px;height:34px;display:flex;align-items:center;overflow:hidden;opacity:.95;margin-left:auto;}
+.week-plate-mini .plate-sleeve{width:22px;height:6px;}
+.week-plate-mini .plate-collar{width:6px;height:19px;margin-right:3px;}
+.week-plate-mini .plate-stack{gap:1px;}
+.week-plate-mini .plate-disc{width:8px;border-radius:2px;border-color:rgba(255,255,255,.16);}
+.week-plate-mini .plate-25{height:28px;}
+.week-plate-mini .plate-20{height:27px;}
+.week-plate-mini .plate-15{height:25px;}
+.week-plate-mini .plate-10{height:23px;}
+.week-plate-mini .plate-5{height:20px;}
+.week-plate-mini .plate-2-5{height:17px;}
+.week-plate-mini .plate-1-25{height:14px;}
+.plate-settings-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;width:100%;}
+.plate-chip{background:var(--bg3);border:1px solid var(--bg4);border-radius:8px;color:var(--text2);font-size:13px;font-weight:600;padding:9px 6px;text-align:center;cursor:pointer;user-select:none;}
+.plate-chip input{display:none;}
+.plate-chip:has(input:checked){background:rgba(204,34,34,.15);border-color:rgba(204,34,34,.5);color:var(--white);}
+@media (max-width:450px){.plate-preview{margin-left:0;padding:7px 9px;}.plate-preview-head{margin-bottom:5px;}.plate-bar{height:30px;}.plate-sleeve{width:28px;height:7px;}.plate-collar{height:21px;width:7px;}.plate-disc{width:10px;}.plate-25{height:30px}.plate-20{height:28px}.plate-15{height:26px}.plate-10{height:24px}.plate-5{height:21px}.plate-2-5{height:18px}.plate-1-25{height:15px}.week-plate-mini{width:66px;min-width:66px}.plate-settings-grid{grid-template-columns:repeat(3,1fr);}}
 
 /* SROW VERSION D: # is RPE indicator, X stays alone */
 .srow-d{display:grid;grid-template-columns:28px 1fr 1fr 46px 28px 22px;gap:6px;align-items:center;}
@@ -696,6 +716,18 @@ if ('serviceWorker' in navigator) {
     </div>
     <div class="settings-row" style="flex-direction:column;align-items:flex-start;gap:8px;">
       <div>
+        <div class="settings-label">Gym plates</div>
+        <div class="settings-sub">Choose the plates your gym has. Used by the bar loader.</div>
+      </div>
+      <div class="plate-settings-grid" id="plateSettingsGrid"></div>
+      <div style="display:flex;gap:8px;width:100%;align-items:center;">
+        <button class="btn btn-ghost btn-sm" onclick="clickFeedback(); savePlateSettings()">Save</button>
+        <button class="btn-danger" onclick="clickFeedback(); resetPlateSettings()">Default</button>
+      </div>
+      <div id="plateSettingsStatus" style="font-size:12px;color:var(--text3);"></div>
+    </div>
+    <div class="settings-row" style="flex-direction:column;align-items:flex-start;gap:8px;">
+      <div>
         <div class="settings-label">Backup folder</div>
         <div class="settings-sub">Folder name where backups are saved (for the ↺ button)</div>
       </div>
@@ -847,6 +879,7 @@ function e1rm(w,r) { return r===1 ? w : Math.round(w*(1+r/30)); }
 // ── MODAL HELPERS ─────────────────────────────────────────────
 // 📳 Agregar feedback a los modales
 function openModal(id) {
+  if(id==='mSettings') renderPlateSettings();
   clickFeedback(); // ⚡ Vibration + sound on modal open
   document.getElementById(id).classList.add('open');
   document.querySelector('.scroll').style.overflow = 'hidden';
@@ -1125,7 +1158,8 @@ function renderDash() {
   document.getElementById('weeklyRows').innerHTML=lifts.map(l=>{
     const v=weekMaxes[l.k],mr=weekMaxReps[l.k];
     return `<div class="week-row" style="cursor:pointer;" onclick="clickFeedback(); navToProgress('${l.n}')">
-      <div><div class="week-name">${l.n}</div>${mr?`<div style="font-size:12px;color:var(--text3);margin-top:2px;">${mr.reps} reps @ ${mr.w}kg</div>`:''}</div>
+      <div class="week-left"><div class="week-name">${l.n}</div>${mr?`<div style="font-size:12px;color:var(--text3);margin-top:2px;">${mr.reps} reps @ ${mr.w}kg</div>`:''}</div>
+      ${v ? renderWeekPlateMini(v) : ''}
       <div class="week-right">${v?`<div class="week-val">${v}</div><div class="week-unit">kg</div>`:`<div class="week-empty">no data</div>`}<div style="color:var(--text3);font-size:11px;margin-left:6px;">›</div></div>
     </div>`;
   }).join('');
@@ -1851,19 +1885,55 @@ function buildSetRow(ei, si, weight='', reps='', rpe='', restTimerStarted=false)
 }
 
 
-const PLATE_VISUALIZER = { bar: 20, plates: [25,20,15,10,5,2.5,1.25] };
+const PLATE_VISUALIZER = { bar: 20, defaultPlates: [25,20,15,10,5,2.5,1.25], allPlates: [25,20,15,10,5,2.5,1.25] };
+
+function getPlateSettings() {
+  const saved = LS.get('mx_plates');
+  const source = Array.isArray(saved) && saved.length ? saved : PLATE_VISUALIZER.defaultPlates;
+  return source.map(Number).filter(n => Number.isFinite(n) && n > 0).sort((a,b)=>b-a);
+}
+function savePlateSettings() {
+  const checked = [...document.querySelectorAll('.plate-setting-check:checked')].map(i => parseFloat(i.value)).filter(Boolean).sort((a,b)=>b-a);
+  if(!checked.length) {
+    const st = document.getElementById('plateSettingsStatus');
+    if(st) st.textContent = 'Select at least one plate.';
+    return;
+  }
+  LS.set('mx_plates', checked);
+  renderPlateSettings();
+  renderDashboard();
+  if(activeSession) renderActiveSession();
+  const st = document.getElementById('plateSettingsStatus');
+  if(st) st.textContent = 'Saved.';
+}
+function resetPlateSettings() {
+  LS.set('mx_plates', PLATE_VISUALIZER.defaultPlates);
+  renderPlateSettings();
+  renderDashboard();
+  if(activeSession) renderActiveSession();
+  const st = document.getElementById('plateSettingsStatus');
+  if(st) st.textContent = 'Reset to default.';
+}
+function renderPlateSettings() {
+  const grid = document.getElementById('plateSettingsGrid');
+  if(!grid) return;
+  const selected = new Set(getPlateSettings().map(String));
+  grid.innerHTML = PLATE_VISUALIZER.allPlates.map(p => {
+    const v = String(p);
+    return `<label class="plate-chip"><input class="plate-setting-check" type="checkbox" value="${p}" ${selected.has(v)?'checked':''}>${formatPlate(p)} kg</label>`;
+  }).join('');
+}
 
 function shouldShowPlateVisualizer(exName) {
   if(!exName) return false;
   const n = exName.toLowerCase().replace(/[–—]/g, '-');
 
-  // Keep this strict: only barbell basics and their common variants.
-  // Accessories/machines stay clean even if their name contains 'press' or 'row'.
+  // Strict on purpose: basics and barbell variants only.
   if(/dumbbell|db |machine|cable|leg press|curl|extension|fly|raise|pushdown|crunch|plank|smith|hack squat|belt squat/.test(n)) return false;
 
   if(/squat|bench|deadlift/.test(n)) return true;
   if(/barbell row|pendlay row/.test(n)) return true;
-  if(/overhead press|military press|strict press|ohp/.test(n)) return true;
+  if(/overhead press|military press|strict press|\bohp\b/.test(n)) return true;
   if(/larsen press|larssen press|press larsen|press larssen/.test(n)) return true;
 
   return false;
@@ -1871,40 +1941,46 @@ function shouldShowPlateVisualizer(exName) {
 
 function getPlatesForWeight(totalWeight) {
   const total = parseFloat(totalWeight);
-  if(!Number.isFinite(total) || total < PLATE_VISUALIZER.bar) return {plates:[], side:0, exact:false, reason:'Mínimo barra de 20 kg'};
+  if(!Number.isFinite(total) || total < PLATE_VISUALIZER.bar) return {plates:[], side:0, exact:false, reason:'Minimum: 20 kg bar'};
   let side = (total - PLATE_VISUALIZER.bar) / 2;
-  if(side < 0) return {plates:[], side:0, exact:false, reason:'Menos que la barra'};
+  if(side < 0) return {plates:[], side:0, exact:false, reason:'Below bar weight'};
   let remaining = Math.round(side * 100) / 100;
   const plates = [];
-  PLATE_VISUALIZER.plates.forEach(plate => {
+  getPlateSettings().forEach(plate => {
     while(remaining + 0.001 >= plate) {
       plates.push(plate);
       remaining = Math.round((remaining - plate) * 100) / 100;
     }
   });
-  return {plates, side, exact:remaining < 0.001, reason:remaining < 0.001 ? '' : `${remaining} kg no se puede armar`};
+  return {plates, side, exact:remaining < 0.001, reason:remaining < 0.001 ? '' : `Cannot load ${formatPlate(side)} kg per side with selected plates`};
 }
 
 function plateClass(plate) { return `plate-${String(plate).replace('.', '-')}`; }
-function formatPlate(plate) { return Number.isInteger(plate) ? String(plate) : String(plate).replace('.', ','); }
+function formatPlate(plate) { return Number.isInteger(Number(plate)) ? String(Number(plate)) : String(plate).replace('.', '.'); }
+function renderPlateStackHtml(plates) { return plates.map(p=>`<div class="plate-disc ${plateClass(p)}" title="${p} kg"></div>`).join(''); }
 
 function renderPlatePreviewHtml(ei, si, weight='') {
   const ex = activeSession && activeSession.exercises[ei] ? activeSession.exercises[ei] : null;
   const enabled = ex && shouldShowPlateVisualizer(ex.name);
   const calc = enabled ? getPlatesForWeight(weight) : {plates:[], side:0, exact:false, reason:''};
   const show = enabled && parseFloat(weight) >= PLATE_VISUALIZER.bar;
-  const label = calc.exact && calc.plates.length ? calc.plates.map(formatPlate).join(' + ') : (calc.exact ? 'barra sola' : 'no exacto');
   return `<div class="plate-preview${show?' show':''}" id="plate-preview-${ei}-${si}">
     <div class="plate-preview-head">
-      <div class="plate-preview-title">Por lado</div>
-      <div class="plate-preview-load">${show ? `${label} = ${formatPlate(calc.side)} kg` : ''}</div>
+      <div class="plate-preview-title">Bar loader</div>
+      <div class="plate-preview-load">${show ? `${formatPlate(calc.side)} kg / side` : ''}</div>
     </div>
     <div class="plate-bar">
       <div class="plate-sleeve"></div><div class="plate-collar"></div>
-      <div class="plate-stack">${calc.plates.map(p=>`<div class="plate-disc ${plateClass(p)}" title="${p} kg"></div>`).join('')}</div>
+      <div class="plate-stack">${renderPlateStackHtml(calc.plates)}</div>
     </div>
     ${calc.reason ? `<div class="plate-preview-note">${calc.reason}</div>` : ''}
   </div>`;
+}
+
+function renderWeekPlateMini(weight) {
+  const calc = getPlatesForWeight(weight);
+  if(!calc.exact || !calc.plates.length) return '';
+  return `<div class="week-plate-mini" aria-label="${formatPlate(calc.side)} kg per side"><div class="plate-sleeve"></div><div class="plate-collar"></div><div class="plate-stack">${renderPlateStackHtml(calc.plates)}</div></div>`;
 }
 
 function updatePlatePreview(ei, si, weight) {
