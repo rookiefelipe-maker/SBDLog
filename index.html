@@ -245,6 +245,21 @@ html,body{height:100%;background:var(--bg0);color:var(--text1);font-family:'DM S
 .cmp-chart{height:190px;width:100%;}
 .cmp-empty{font-size:13px;color:var(--text3);text-align:center;padding:18px 0;}
 
+
+/* PROGRAM CHECKLIST */
+.program-check-row{display:flex;align-items:center;gap:10px;background:var(--bg3);border:1px solid var(--bg4);border-radius:10px;padding:10px 12px;cursor:pointer;transition:all .15s;}
+.program-check-row:active{opacity:.8;}
+.program-check-row input{width:20px;height:20px;accent-color:#cc2222;flex:0 0 auto;}
+.program-check-row.done{border-color:rgba(76,175,80,.35);background:rgba(76,175,80,.08);}
+.program-check-name{font-size:14px;font-weight:600;color:var(--text1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.program-check-kind{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-top:2px;}
+.program-check-weight{font-family:'Bebas Neue',sans-serif;font-size:26px;line-height:1;color:var(--white);white-space:nowrap;}
+.program-check-weight span{font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text3);margin-left:2px;}
+.program-sbd-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:10px;}
+.program-sbd-cell{background:var(--bg3);border-radius:var(--rs);padding:9px 10px;min-width:0;}
+.program-sbd-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:3px;}
+.program-sbd-value{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--white);line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
 /* SETTINGS */
 .settings-row{display:flex;justify-content:space-between;align-items:center;padding:16px 0;border-bottom:1px solid var(--bg3);gap:10px;flex-wrap:wrap;}
 .settings-row:last-child{border-bottom:none;}
@@ -782,12 +797,2434 @@ function getData() {
     templates: LS.get('mx_tpl') || [],
     sessions: LS.get('mx_sess') || [],
     customEx: LS.get('mx_ex') || [],
+    programState: getProgramState(),
   };
 }
 function save1RMData(d) { LS.set('mx_1rm', d); }
 function saveTplData(d) { LS.set('mx_tpl', d); }
 function saveSessData(d) { LS.set('mx_sess', d); }
 function saveExData(d) { LS.set('mx_ex', d); }
+
+
+// ── SIMPLE PROGRAM CHECKLIST (from programa_pesos_v2.csv) ─────
+const PROGRAM_TABLE = [
+  {
+    "week": "S2",
+    "block": "B1",
+    "phase": "Fuerza - Tecnica",
+    "items": [
+      {
+        "id": "sq_top",
+        "label": "Squat top",
+        "weight": "145",
+        "kind": "squat"
+      },
+      {
+        "id": "sq_bo",
+        "label": "Squat back-off",
+        "weight": "127.5",
+        "kind": "squat"
+      },
+      {
+        "id": "bp_tech",
+        "label": "Bench técnico",
+        "weight": "85",
+        "kind": "bench"
+      },
+      {
+        "id": "dl_top",
+        "label": "Deadlift top",
+        "weight": "145",
+        "kind": "deadlift"
+      },
+      {
+        "id": "dl_bo",
+        "label": "Deadlift back-off",
+        "weight": "127.5",
+        "kind": "deadlift"
+      },
+      {
+        "id": "bp_top",
+        "label": "Bench topset",
+        "weight": "85",
+        "kind": "bench"
+      },
+      {
+        "id": "bp_bo",
+        "label": "Bench topset back-off",
+        "weight": "75",
+        "kind": "bench"
+      },
+      {
+        "id": "pause_sq",
+        "label": "Pause squat Smith",
+        "weight": "122.5",
+        "kind": "squat"
+      },
+      {
+        "id": "light_bp",
+        "label": "Light bench",
+        "weight": "72.5",
+        "kind": "bench"
+      },
+      {
+        "id": "cg_bp",
+        "label": "Close grip bench",
+        "weight": "75",
+        "kind": "bench"
+      },
+      {
+        "id": "var_dl",
+        "label": "Pause DL",
+        "weight": "122.5",
+        "kind": "deadlift"
+      }
+    ]
+  },
+  {
+    "week": "S3",
+    "block": "B1",
+    "phase": "Fuerza - Tecnica",
+    "items": [
+      {
+        "id": "sq_top",
+        "label": "Squat top",
+        "weight": "145",
+        "kind": "squat"
+      },
+      {
+        "id": "sq_bo",
+        "label": "Squat back-off",
+        "weight": "127.5",
+        "kind": "squat"
+      },
+      {
+        "id": "bp_tech",
+        "label": "Bench técnico",
+        "weight": "85",
+        "kind": "bench"
+      },
+      {
+        "id": "dl_top",
+        "label": "Deadlift top",
+        "weight": "145",
+        "kind": "deadlift"
+      },
+      {
+        "id": "dl_bo",
+        "label": "Deadlift back-off",
+        "weight": "127.5",
+        "kind": "deadlift"
+      },
+      {
+        "id": "bp_top",
+        "label": "Bench topset",
+        "weight": "85",
+        "kind": "bench"
+      },
+      {
+        "id": "bp_bo",
+        "label": "Bench topset back-off",
+        "weight": "75",
+        "kind": "bench"
+      },
+      {
+        "id": "pause_sq",
+        "label": "Pause squat Smith",
+        "weight": "122.5",
+        "kind": "squat"
+      },
+      {
+        "id": "light_bp",
+        "label": "Light bench",
+        "weight": "72.5",
+        "kind": "bench"
+      },
+      {
+        "id": "larssen",
+        "label": "Larssen press",
+        "weight": "77.5",
+        "kind": "bench"
+      },
+      {
+        "id": "var_dl",
+        "label": "Pause DL",
+        "weight": "122.5",
+        "kind": "deadlift"
+      }
+    ]
+  },
+  {
+    "week": "S4",
+    "block": "B1",
+    "phase": "Fuerza",
+    "items": [
+      {
+        "id": "sq_top",
+        "label": "Squat top",
+        "weight": "150",
+        "kind": "squat"
+      },
+      {
+        "id": "sq_bo",
+        "label": "Squat back-off",
+        "weight": "132.5",
+        "kind": "squat"
+      },
+      {
+        "id": "bp_tech",
+        "label": "Bench técnico",
+        "weight": "90",
+        "kind": "bench"
+      },
+      {
+        "id": "dl_top",
+        "label": "Deadlift top",
+        "weight": "150",
+        "kind": "deadlift"
+      },
+      {
+        "id": "dl_bo",
+        "label": "Deadlift back-off",
+        "weight": "132.5",
+        "kind": "deadlift"
+      },
+      {
+        "id": "bp_top",
+        "label": "Bench topset",
+        "weight": "90",
+        "kind": "bench"
+      },
+      {
+        "id": "bp_bo",
+        "label": "Bench topset back-off",
+        "weight": "80",
+        "kind": "bench"
+      },
+      {
+        "id": "pause_sq",
+        "label": "Pause squat Smith",
+        "weight": "127.5",
+        "kind": "squat"
+      },
+      {
+        "id": "light_bp",
+        "label": "Light bench",
+        "weight": "77.5",
+        "kind": "bench"
+      },
+      {
+        "id": "cg_bp",
+        "label": "Close grip bench",
+        "weight": "80",
+        "kind": "bench"
+      },
+      {
+        "id": "var_dl",
+        "label": "Pause DL",
+        "weight": "127.5",
+        "kind": "deadlift"
+      }
+    ]
+  },
+  {
+    "week": "S5",
+    "block": "B1",
+    "phase": "Fuerza",
+    "items": [
+      {
+        "id": "sq_top",
+        "label": "Squat top",
+        "weight": "150",
+        "kind": "squat"
+      },
+      {
+        "id": "sq_bo",
+        "label": "Squat back-off",
+        "weight": "132.5",
+        "kind": "squat"
+      },
+      {
+        "id": "bp_tech",
+        "label": "Bench técnico",
+        "weight": "90",
+        "kind": "bench"
+      },
+      {
+        "id": "dl_top",
+        "label": "Deadlift top",
+        "weight": "150",
+        "kind": "deadlift"
+      },
+      {
+        "id": "dl_bo",
+        "label": "Deadlift back-off",
+        "weight": "132.5",
+        "kind": "deadlift"
+      },
+      {
+        "id": "bp_top",
+        "label": "Bench topset",
+        "weight": "90",
+        "kind": "bench"
+      },
+      {
+        "id": "bp_bo",
+        "label": "Bench topset back-off",
+        "weight": "80",
+        "kind": "bench"
+      },
+      {
+        "id": "pause_sq",
+        "label": "Pause squat Smith",
+        "weight": "127.5",
+        "kind": "squat"
+      },
+      {
+        "id": "light_bp",
+        "label": "Light bench",
+        "weight": "77.5",
+        "kind": "bench"
+      },
+      {
+        "id": "larssen",
+        "label": "Larssen press",
+        "weight": "82.5",
+        "kind": "bench"
+      },
+      {
+        "id": "var_dl",
+        "label": "Pause DL",
+        "weight": "127.5",
+        "kind": "deadlift"
+      }
+    ]
+  },
+  {
+    "week": "S6",
+    "block": "B1",
+    "phase": "Fuerza",
+    "items": [
+      {
+        "id": "sq_top",
+        "label": "Squat top",
+        "weight": "155",
+        "kind": "squat"
+      },
+      {
+        "id": "sq_bo",
+        "label": "Squat back-off",
+        "weight": "137.5",
+        "kind": "squat"
+      },
+      {
+        "id": "bp_tech",
+        "label": "Bench técnico",
+        "weight": "95",
+        "kind": "bench"
+      },
+      {
+        "id": "dl_top",
+        "label": "Deadlift top",
+        "weight": "155",
+        "kind": "deadlift"
+      },
+      {
+        "id": "dl_bo",
+        "label": "Deadlift back-off",
+        "weight": "137.5",
+        "kind": "deadlift"
+      },
+      {
+        "id": "bp_top",
+        "label": "Bench topset",
+        "weight": "95",
+        "kind": "bench"
+      },
+      {
+        "id": "bp_bo",
+        "label": "Bench topset back-off",
+        "weight": "82.5",
+        "kind": "bench"
+      },
+      {
+        "id": "pause_sq",
+        "label": "Pause squat Smith",
+        "weight": "132.5",
+        "kind": "squat"
+      },
+      {
+        "id": "light_bp",
+        "label": "Light bench",
+        "weight": "80",
+        "kind": "bench"
+      },
+      {
+        "id": "cg_bp",
+        "label": "Close grip bench",
+        "weight": "82.5",
+        "kind": "bench"
+      },
+      {
+        "id": "var_dl",
+        "label": "Pause DL",
+        "weight": "132.5",
+        "kind": "deadlift"
+      }
+    ]
+  },
+  {
+    "week": "S7",
+    "block": "B1",
+    "phase": "Fuerza",
+    "items": [
+      {
+        "id": "sq_top",
+        "label": "Squat top",
+        "weight": "155",
+        "kind": "squat"
+      },
+      {
+        "id": "sq_bo",
+        "label": "Squat back-off",
+        "weight": "137.5",
+        "kind": "squat"
+      },
+      {
+        "id": "bp_tech",
+        "label": "Bench técnico",
+        "weight": "95",
+        "kind": "bench"
+      },
+      {
+        "id": "dl_top",
+        "label": "Deadlift top",
+        "weight": "155",
+        "kind": "deadlift"
+      },
+      {
+        "id": "dl_bo",
+        "label": "Deadlift back-off",
+        "weight": "137.5",
+        "kind": "deadlift"
+      },
+      {
+        "id": "bp_top",
+        "label": "Bench topset",
+        "weight": "95",
+        "kind": "bench"
+      },
+      {
+        "id": "bp_bo",
+        "label": "Bench topset back-off",
+        "weight": "82.5",
+        "kind": "bench"
+      },
+      {
+        "id": "pause_sq",
+        "label": "Pause squat Smith",
+        "weight": "132.5",
+        "kind": "squat"
+      },
+      {
+        "id": "light_bp",
+        "label": "Light bench",
+        "weight": "80",
+        "kind": "bench"
+      },
+      {
+        "id": "larssen",
+        "label": "Larssen press",
+        "weight": "87.5",
+        "kind": "bench"
+      },
+      {
+        "id": "var_dl",
+        "label": "Pause DL",
+        "weight": "132.5",
+        "kind": "deadlift"
+      }
+    ]
+  },
+  {
+    "week": "S8",
+    "block": "B1",
+    "phase": "DELOAD",
+    "items": [
+      {
+        "id": "sq_top",
+        "label": "Squat top",
+        "weight": "90",
+        "kind": "squat"
+      },
+      {
+        "id": "sq_bo",
+        "label": "Squat back-off",
+        "weight": "80",
+        "kind": "squat"
+      },
+      {
+        "id": "bp_tech",
+        "label": "Bench técnico",
+        "weight": "55",
+        "kind": "bench"
+      },
+      {
+        "id": "dl_top",
+        "label": "Deadlift top",
+        "weight": "90",
+        "kind": "deadlift"
+      },
+      {
+        "id": "dl_bo",
+        "label": "Deadlift back-off",
+        "weight": "80",
+        "kind": "deadlift"
+      },
+      {
+        "id": "bp_top",
+        "label": "Bench topset",
+        "weight": "55",
+        "kind": "bench"
+      },
+      {
+        "id": "bp_bo",
+        "label": "Bench topset back-off",
+        "weight": "47.5",
+        "kind": "bench"
+      },
+      {
+        "id": "pause_sq",
+        "label": "Pause squat Smith",
+        "weight": "77.5",
+        "kind": "squat"
+      },
+      {
+        "id": "light_bp",
+        "label": "Light bench",
+        "weight": "47.5",
+        "kind": "bench"
+      },
+      {
+        "id": "cg_bp",
+        "label": "Close grip bench",
+        "weight": "47.5",
+        "kind": "bench"
+      },
+      {
+        "id": "var_dl",
+        "label": "Pause DL",
+        "weight": "77.5",
+        "kind": "deadlift"
+      }
+    ]
+  },
+  {
+    "week": "S9",
+    "block": "B2",
+    "phase": "Hipertrofia",
+    "items": [
+      {
+        "id": "sq_top",
+        "label": "Squat top",
+        "weight": "165",
+        "kind": "squat"
+      },
+      {
+        "id": "sq_bo",
+        "label": "Squat back-off",
+        "weight": "145",
+        "kind": "squat"
+      },
+      {
+        "id": "bp_tech",
+        "label": "Bench técnico",
+        "weight": "105",
+        "kind": "bench"
+      },
+      {
+        "id": "dl_top",
+        "label": "Deadlift top",
+        "weight": "165",
+        "kind": "deadlift"
+      },
+      {
+        "id": "dl_bo",
+        "label": "Deadlift back-off",
+        "weight": "145",
+        "kind": "deadlift"
+      },
+      {
+        "id": "bp_top",
+        "label": "Bench topset",
+        "weight": "105",
+        "kind": "bench"
+      },
+      {
+        "id": "bp_bo",
+        "label": "Bench topset back-off",
+        "weight": "92.5",
+        "kind": "bench"
+      },
+      {
+        "id": "pause_sq",
+        "label": "Pause squat Smith",
+        "weight": "140",
+        "kind": "squat"
+      },
+      {
+        "id": "light_bp",
+        "label": "Light bench",
+        "weight": "90",
+        "kind": "bench"
+      },
+      {
+        "id": "larssen",
+        "label": "Larssen press",
+        "weight": "97.5",
+        "kind": "bench"
+      },
+      {
+        "id": "var_dl",
+        "label": "Deficit DL",
+        "weight": "135",
+        "kind": "deadlift"
+      }
+    ]
+  },
+  {
+    "week": "S10",
+    "block": "B2",
+    "phase": "Hipertrofia",
+    "items": [
+      {
+        "id": "sq_top",
+        "label": "Squat top",
+        "weight": "165",
+        "kind": "squat"
+      },
+      {
+        "id": "sq_bo",
+        "label": "Squat back-off",
+        "weight": "145",
+        "kind": "squat"
+      },
+      {
+        "id": "bp_tech",
+        "label": "Bench técnico",
+        "weight": "105",
+        "kind": "bench"
+      },
+      {
+        "id": "dl_top",
+        "label": "Deadlift top",
+        "weight": "165",
+        "kind": "deadlift"
+      },
+      {
+        "id": "dl_bo",
+        "label": "Deadlift back-off",
+        "weight": "145",
+        "kind": "deadlift"
+      },
+      {
+        "id": "bp_top",
+        "label": "Bench topset",
+        "weight": "105",
+        "kind": "bench"
+      },
+      {
+        "id": "bp_bo",
+        "label": "Bench topset back-off",
+        "weight": "92.5",
+        "kind": "bench"
+      },
+      {
+        "id": "pause_sq",
+        "label": "Pause squat Smith",
+        "weight": "140",
+        "kind": "squat"
+      },
+      {
+        "id": "light_bp",
+        "label": "Light bench",
+        "weight": "90",
+        "kind": "bench"
+      },
+      {
+        "id": "cg_bp",
+        "label": "Close grip bench",
+        "weight": "92.5",
+        "kind": "bench"
+      },
+      {
+        "id": "var_dl",
+        "label": "Deficit DL",
+        "weight": "135",
+        "kind": "deadlift"
+      }
+    ]
+  },
+  {
+    "week": "S11",
+    "block": "B2",
+    "phase": "Hipertrofia",
+    "items": [
+      {
+        "id": "sq_top",
+        "label": "Squat top",
+        "weight": "170",
+        "kind": "squat"
+      },
+      {
+        "id": "sq_bo",
+        "label": "Squat back-off",
+        "weight": "150",
+        "kind": "squat"
+      },
+      {
+        "id": "bp_tech",
+        "label": "Bench técnico",
+        "weight": "110",
+        "kind": "bench"
+      },
+      {
+        "id": "dl_top",
+        "label": "Deadlift top",
+        "weight": "170",
+        "kind": "deadlift"
+      },
+      {
+        "id": "dl_bo",
+        "label": "Deadlift back-off",
+        "weight": "150",
+        "kind": "deadlift"
+      },
+      {
+        "id": "bp_top",
+        "label": "Bench topset",
+        "weight": "110",
+        "kind": "bench"
+      },
+      {
+        "id": "bp_bo",
+        "label": "Bench topset back-off",
+        "weight": "97.5",
+        "kind": "bench"
+      },
+      {
+        "id": "pause_sq",
+        "label": "Pause squat Smith",
+        "weight": "145",
+        "kind": "squat"
+      },
+      {
+        "id": "light_bp",
+        "label": "Light bench",
+        "weight": "92.5",
+        "kind": "bench"
+      },
+      {
+        "id": "larssen",
+        "label": "Larssen press",
+        "weight": "100",
+        "kind": "bench"
+      },
+      {
+        "id": "var_dl",
+        "label": "Deficit DL",
+        "weight": "140",
+        "kind": "deadlift"
+      }
+    ]
+  },
+  {
+    "week": "S12",
+    "block": "B2",
+    "phase": "Hipertrofia",
+    "items": [
+      {
+        "id": "sq_top",
+        "label": "Squat top",
+        "weight": "170",
+        "kind": "squat"
+      },
+      {
+        "id": "sq_bo",
+        "label": "Squat back-off",
+        "weight": "150",
+        "kind": "squat"
+      },
+      {
+        "id": "bp_tech",
+        "label": "Bench técnico",
+        "weight": "110",
+        "kind": "bench"
+      },
+      {
+        "id": "dl_top",
+        "label": "Deadlift top",
+        "weight": "170",
+        "kind": "deadlift"
+      },
+      {
+        "id": "dl_bo",
+        "label": "Deadlift back-off",
+        "weight": "150",
+        "kind": "deadlift"
+      },
+      {
+        "id": "bp_top",
+        "label": "Bench topset",
+        "weight": "110",
+        "kind": "bench"
+      },
+      {
+        "id": "bp_bo",
+        "label": "Bench topset back-off",
+        "weight": "97.5",
+        "kind": "bench"
+      },
+      {
+        "id": "pause_sq",
+        "label": "Pause squat Smith",
+        "weight": "145",
+        "kind": "squat"
+      },
+      {
+        "id": "light_bp",
+        "label": "Light bench",
+        "weight": "92.5",
+        "kind": "bench"
+      },
+      {
+        "id": "cg_bp",
+        "label": "Close grip bench",
+        "weight": "97.5",
+        "kind": "bench"
+      },
+      {
+        "id": "var_dl",
+        "label": "Deficit DL",
+        "weight": "140",
+        "kind": "deadlift"
+      }
+    ]
+  },
+  {
+    "week": "S13",
+    "block": "B2",
+    "phase": "Hipertrofia",
+    "items": [
+      {
+        "id": "sq_top",
+        "label": "Squat top",
+        "weight": "175",
+        "kind": "squat"
+      },
+      {
+        "id": "sq_bo",
+        "label": "Squat back-off",
+        "weight": "155",
+        "kind": "squat"
+      },
+      {
+        "id": "bp_tech",
+        "label": "Bench técnico",
+        "weight": "115",
+        "kind": "bench"
+      },
+      {
+        "id": "dl_top",
+        "label": "Deadlift top",
+        "weight": "175",
+        "kind": "deadlift"
+      },
+      {
+        "id": "dl_bo",
+        "label": "Deadlift back-off",
+        "weight": "155",
+        "kind": "deadlift"
+      },
+      {
+        "id": "bp_top",
+        "label": "Bench topset",
+        "weight": "115",
+        "kind": "bench"
+      },
+      {
+        "id": "bp_bo",
+        "label": "Bench topset back-off",
+        "weight": "100",
+        "kind": "bench"
+      },
+      {
+        "id": "pause_sq",
+        "label": "Pause squat Smith",
+        "weight": "150",
+        "kind": "squat"
+      },
+      {
+        "id": "light_bp",
+        "label": "Light bench",
+        "weight": "97.5",
+        "kind": "bench"
+      },
+      {
+        "id": "larssen",
+        "label": "Larssen press",
+        "weight": "105",
+        "kind": "bench"
+      },
+      {
+        "id": "var_dl",
+        "label": "Deficit DL",
+        "weight": "142.5",
+        "kind": "deadlift"
+      }
+    ]
+  },
+  {
+    "week": "S14",
+    "block": "B2",
+    "phase": "Hipertrofia",
+    "items": [
+      {
+        "id": "sq_top",
+        "label": "Squat top",
+        "weight": "175",
+        "kind": "squat"
+      },
+      {
+        "id": "sq_bo",
+        "label": "Squat back-off",
+        "weight": "155",
+        "kind": "squat"
+      },
+      {
+        "id": "bp_tech",
+        "label": "Bench técnico",
+        "weight": "115",
+        "kind": "bench"
+      },
+      {
+        "id": "dl_top",
+        "label": "Deadlift top",
+        "weight": "175",
+        "kind": "deadlift"
+      },
+      {
+        "id": "dl_bo",
+        "label": "Deadlift back-off",
+        "weight": "155",
+        "kind": "deadlift"
+      },
+      {
+        "id": "bp_top",
+        "label": "Bench topset",
+        "weight": "115",
+        "kind": "bench"
+      },
+      {
+        "id": "bp_bo",
+        "label": "Bench topset back-off",
+        "weight": "100",
+        "kind": "bench"
+      },
+      {
+        "id": "pause_sq",
+        "label": "Pause squat Smith",
+        "weight": "150",
+        "kind": "squat"
+      },
+      {
+        "id": "light_bp",
+        "label": "Light bench",
+        "weight": "97.5",
+        "kind": "bench"
+      },
+      {
+        "id": "cg_bp",
+        "label": "Close grip bench",
+        "weight": "100",
+        "kind": "bench"
+      },
+      {
+        "id": "var_dl",
+        "label": "Deficit DL",
+        "weight": "142.5",
+        "kind": "deadlift"
+      }
+    ]
+  },
+  {
+    "week": "S15",
+    "block": "B2",
+    "phase": "DELOAD",
+    "items": [
+      {
+        "id": "sq_top",
+        "label": "Squat top",
+        "weight": "110",
+        "kind": "squat"
+      },
+      {
+        "id": "sq_bo",
+        "label": "Squat back-off",
+        "weight": "97.5",
+        "kind": "squat"
+      },
+      {
+        "id": "bp_tech",
+        "label": "Bench técnico",
+        "weight": "65",
+        "kind": "bench"
+      },
+      {
+        "id": "dl_top",
+        "label": "Deadlift top",
+        "weight": "110",
+        "kind": "deadlift"
+      },
+      {
+        "id": "dl_bo",
+        "label": "Deadlift back-off",
+        "weight": "97.5",
+        "kind": "deadlift"
+      },
+      {
+        "id": "bp_top",
+        "label": "Bench topset",
+        "weight": "65",
+        "kind": "bench"
+      },
+      {
+        "id": "bp_bo",
+        "label": "Bench topset back-off",
+        "weight": "57.5",
+        "kind": "bench"
+      },
+      {
+        "id": "pause_sq",
+        "label": "Pause squat Smith",
+        "weight": "92.5",
+        "kind": "squat"
+      },
+      {
+        "id": "light_bp",
+        "label": "Light bench",
+        "weight": "55",
+        "kind": "bench"
+      },
+      {
+        "id": "larssen",
+        "label": "Larssen press",
+        "weight": "60",
+        "kind": "bench"
+      },
+      {
+        "id": "var_dl",
+        "label": "Deficit DL",
+        "weight": "90",
+        "kind": "deadlift"
+      }
+    ]
+  },
+  {
+    "week": "S16",
+    "block": "B3",
+    "phase": "Intensificacion",
+    "items": [
+      {
+        "id": "sq_top",
+        "label": "Squat top",
+        "weight": "180",
+        "kind": "squat"
+      },
+      {
+        "id": "sq_bo",
+        "label": "Squat back-off",
+        "weight": "157.5",
+        "kind": "squat"
+      },
+      {
+        "id": "bp_tech",
+        "label": "Bench técnico",
+        "weight": "115",
+        "kind": "bench"
+      },
+      {
+        "id": "dl_top",
+        "label": "Deadlift top",
+        "weight": "180",
+        "kind": "deadlift"
+      },
+      {
+        "id": "dl_bo",
+        "label": "Deadlift back-off",
+        "weight": "157.5",
+        "kind": "deadlift"
+      },
+      {
+        "id": "bp_top",
+        "label": "Bench topset",
+        "weight": "115",
+        "kind": "bench"
+      },
+      {
+        "id": "bp_bo",
+        "label": "Bench topset back-off",
+        "weight": "100",
+        "kind": "bench"
+      },
+      {
+        "id": "pause_sq",
+        "label": "Pause squat Smith",
+        "weight": "152.5",
+        "kind": "squat"
+      },
+      {
+        "id": "light_bp",
+        "label": "Light bench",
+        "weight": "97.5",
+        "kind": "bench"
+      },
+      {
+        "id": "cg_bp",
+        "label": "Close grip bench",
+        "weight": "100",
+        "kind": "bench"
+      },
+      {
+        "id": "var_dl",
+        "label": "Pause DL",
+        "weight": "152.5",
+        "kind": "deadlift"
+      }
+    ]
+  },
+  {
+    "week": "S17",
+    "block": "B3",
+    "phase": "Intensificacion",
+    "items": [
+      {
+        "id": "sq_top",
+        "label": "Squat top",
+        "weight": "180",
+        "kind": "squat"
+      },
+      {
+        "id": "sq_bo",
+        "label": "Squat back-off",
+        "weight": "157.5",
+        "kind": "squat"
+      },
+      {
+        "id": "bp_tech",
+        "label": "Bench técnico",
+        "weight": "115",
+        "kind": "bench"
+      },
+      {
+        "id": "dl_top",
+        "label": "Deadlift top",
+        "weight": "180",
+        "kind": "deadlift"
+      },
+      {
+        "id": "dl_bo",
+        "label": "Deadlift back-off",
+        "weight": "157.5",
+        "kind": "deadlift"
+      },
+      {
+        "id": "bp_top",
+        "label": "Bench topset",
+        "weight": "115",
+        "kind": "bench"
+      },
+      {
+        "id": "bp_bo",
+        "label": "Bench topset back-off",
+        "weight": "100",
+        "kind": "bench"
+      },
+      {
+        "id": "pause_sq",
+        "label": "Pause squat Smith",
+        "weight": "152.5",
+        "kind": "squat"
+      },
+      {
+        "id": "light_bp",
+        "label": "Light bench",
+        "weight": "97.5",
+        "kind": "bench"
+      },
+      {
+        "id": "larssen",
+        "label": "Larssen press",
+        "weight": "105",
+        "kind": "bench"
+      },
+      {
+        "id": "var_dl",
+        "label": "Pause DL",
+        "weight": "152.5",
+        "kind": "deadlift"
+      }
+    ]
+  },
+  {
+    "week": "S18",
+    "block": "B3",
+    "phase": "Intensificacion",
+    "items": [
+      {
+        "id": "sq_top",
+        "label": "Squat top",
+        "weight": "185",
+        "kind": "squat"
+      },
+      {
+        "id": "sq_bo",
+        "label": "Squat back-off",
+        "weight": "162.5",
+        "kind": "squat"
+      },
+      {
+        "id": "bp_tech",
+        "label": "Bench técnico",
+        "weight": "120",
+        "kind": "bench"
+      },
+      {
+        "id": "dl_top",
+        "label": "Deadlift top",
+        "weight": "185",
+        "kind": "deadlift"
+      },
+      {
+        "id": "dl_bo",
+        "label": "Deadlift back-off",
+        "weight": "162.5",
+        "kind": "deadlift"
+      },
+      {
+        "id": "bp_top",
+        "label": "Bench topset",
+        "weight": "120",
+        "kind": "bench"
+      },
+      {
+        "id": "bp_bo",
+        "label": "Bench topset back-off",
+        "weight": "105",
+        "kind": "bench"
+      },
+      {
+        "id": "pause_sq",
+        "label": "Pause squat Smith",
+        "weight": "157.5",
+        "kind": "squat"
+      },
+      {
+        "id": "light_bp",
+        "label": "Light bench",
+        "weight": "102.5",
+        "kind": "bench"
+      },
+      {
+        "id": "cg_bp",
+        "label": "Close grip bench",
+        "weight": "105",
+        "kind": "bench"
+      },
+      {
+        "id": "var_dl",
+        "label": "Pause DL",
+        "weight": "157.5",
+        "kind": "deadlift"
+      }
+    ]
+  },
+  {
+    "week": "S19",
+    "block": "B3",
+    "phase": "Intensificacion",
+    "items": [
+      {
+        "id": "sq_top",
+        "label": "Squat top",
+        "weight": "185",
+        "kind": "squat"
+      },
+      {
+        "id": "sq_bo",
+        "label": "Squat back-off",
+        "weight": "162.5",
+        "kind": "squat"
+      },
+      {
+        "id": "bp_tech",
+        "label": "Bench técnico",
+        "weight": "120",
+        "kind": "bench"
+      },
+      {
+        "id": "dl_top",
+        "label": "Deadlift top",
+        "weight": "185",
+        "kind": "deadlift"
+      },
+      {
+        "id": "dl_bo",
+        "label": "Deadlift back-off",
+        "weight": "162.5",
+        "kind": "deadlift"
+      },
+      {
+        "id": "bp_top",
+        "label": "Bench topset",
+        "weight": "120",
+        "kind": "bench"
+      },
+      {
+        "id": "bp_bo",
+        "label": "Bench topset back-off",
+        "weight": "105",
+        "kind": "bench"
+      },
+      {
+        "id": "pause_sq",
+        "label": "Pause squat Smith",
+        "weight": "157.5",
+        "kind": "squat"
+      },
+      {
+        "id": "light_bp",
+        "label": "Light bench",
+        "weight": "102.5",
+        "kind": "bench"
+      },
+      {
+        "id": "larssen",
+        "label": "Larssen press",
+        "weight": "110",
+        "kind": "bench"
+      },
+      {
+        "id": "var_dl",
+        "label": "Pause DL",
+        "weight": "157.5",
+        "kind": "deadlift"
+      }
+    ]
+  },
+  {
+    "week": "S20",
+    "block": "B3",
+    "phase": "Intensificacion",
+    "items": [
+      {
+        "id": "sq_top",
+        "label": "Squat top",
+        "weight": "190",
+        "kind": "squat"
+      },
+      {
+        "id": "sq_bo",
+        "label": "Squat back-off",
+        "weight": "167.5",
+        "kind": "squat"
+      },
+      {
+        "id": "bp_tech",
+        "label": "Bench técnico",
+        "weight": "125",
+        "kind": "bench"
+      },
+      {
+        "id": "dl_top",
+        "label": "Deadlift top",
+        "weight": "190",
+        "kind": "deadlift"
+      },
+      {
+        "id": "dl_bo",
+        "label": "Deadlift back-off",
+        "weight": "167.5",
+        "kind": "deadlift"
+      },
+      {
+        "id": "bp_top",
+        "label": "Bench topset",
+        "weight": "125",
+        "kind": "bench"
+      },
+      {
+        "id": "bp_bo",
+        "label": "Bench topset back-off",
+        "weight": "110",
+        "kind": "bench"
+      },
+      {
+        "id": "pause_sq",
+        "label": "Pause squat Smith",
+        "weight": "162.5",
+        "kind": "squat"
+      },
+      {
+        "id": "light_bp",
+        "label": "Light bench",
+        "weight": "105",
+        "kind": "bench"
+      },
+      {
+        "id": "cg_bp",
+        "label": "Close grip bench",
+        "weight": "110",
+        "kind": "bench"
+      },
+      {
+        "id": "var_dl",
+        "label": "Pause DL",
+        "weight": "162.5",
+        "kind": "deadlift"
+      }
+    ]
+  },
+  {
+    "week": "S21",
+    "block": "B3",
+    "phase": "Intensificacion",
+    "items": [
+      {
+        "id": "sq_top",
+        "label": "Squat top",
+        "weight": "190",
+        "kind": "squat"
+      },
+      {
+        "id": "sq_bo",
+        "label": "Squat back-off",
+        "weight": "167.5",
+        "kind": "squat"
+      },
+      {
+        "id": "bp_tech",
+        "label": "Bench técnico",
+        "weight": "125",
+        "kind": "bench"
+      },
+      {
+        "id": "dl_top",
+        "label": "Deadlift top",
+        "weight": "190",
+        "kind": "deadlift"
+      },
+      {
+        "id": "dl_bo",
+        "label": "Deadlift back-off",
+        "weight": "167.5",
+        "kind": "deadlift"
+      },
+      {
+        "id": "bp_top",
+        "label": "Bench topset",
+        "weight": "125",
+        "kind": "bench"
+      },
+      {
+        "id": "bp_bo",
+        "label": "Bench topset back-off",
+        "weight": "110",
+        "kind": "bench"
+      },
+      {
+        "id": "pause_sq",
+        "label": "Pause squat Smith",
+        "weight": "162.5",
+        "kind": "squat"
+      },
+      {
+        "id": "light_bp",
+        "label": "Light bench",
+        "weight": "105",
+        "kind": "bench"
+      },
+      {
+        "id": "larssen",
+        "label": "Larssen press",
+        "weight": "115",
+        "kind": "bench"
+      },
+      {
+        "id": "var_dl",
+        "label": "Pause DL",
+        "weight": "162.5",
+        "kind": "deadlift"
+      }
+    ]
+  },
+  {
+    "week": "S22",
+    "block": "B3",
+    "phase": "DELOAD",
+    "items": [
+      {
+        "id": "sq_top",
+        "label": "Squat top",
+        "weight": "120",
+        "kind": "squat"
+      },
+      {
+        "id": "sq_bo",
+        "label": "Squat back-off",
+        "weight": "105",
+        "kind": "squat"
+      },
+      {
+        "id": "bp_tech",
+        "label": "Bench técnico",
+        "weight": "75",
+        "kind": "bench"
+      },
+      {
+        "id": "dl_top",
+        "label": "Deadlift top",
+        "weight": "120",
+        "kind": "deadlift"
+      },
+      {
+        "id": "dl_bo",
+        "label": "Deadlift back-off",
+        "weight": "105",
+        "kind": "deadlift"
+      },
+      {
+        "id": "bp_top",
+        "label": "Bench topset",
+        "weight": "75",
+        "kind": "bench"
+      },
+      {
+        "id": "bp_bo",
+        "label": "Bench topset back-off",
+        "weight": "65",
+        "kind": "bench"
+      },
+      {
+        "id": "pause_sq",
+        "label": "Pause squat Smith",
+        "weight": "102.5",
+        "kind": "squat"
+      },
+      {
+        "id": "light_bp",
+        "label": "Light bench",
+        "weight": "65",
+        "kind": "bench"
+      },
+      {
+        "id": "cg_bp",
+        "label": "Close grip bench",
+        "weight": "65",
+        "kind": "bench"
+      },
+      {
+        "id": "var_dl",
+        "label": "Pause DL",
+        "weight": "102.5",
+        "kind": "deadlift"
+      }
+    ]
+  },
+  {
+    "week": "S23",
+    "block": "B4",
+    "phase": "Peak",
+    "items": [
+      {
+        "id": "sq_top",
+        "label": "Squat top",
+        "weight": "195",
+        "kind": "squat"
+      },
+      {
+        "id": "sq_bo",
+        "label": "Squat back-off",
+        "weight": "172.5",
+        "kind": "squat"
+      },
+      {
+        "id": "bp_tech",
+        "label": "Bench técnico",
+        "weight": "128",
+        "kind": "bench"
+      },
+      {
+        "id": "dl_top",
+        "label": "Deadlift top",
+        "weight": "195",
+        "kind": "deadlift"
+      },
+      {
+        "id": "dl_bo",
+        "label": "Deadlift back-off",
+        "weight": "172.5",
+        "kind": "deadlift"
+      },
+      {
+        "id": "bp_top",
+        "label": "Bench topset",
+        "weight": "128",
+        "kind": "bench"
+      },
+      {
+        "id": "bp_bo",
+        "label": "Bench topset back-off",
+        "weight": "112.5",
+        "kind": "bench"
+      },
+      {
+        "id": "pause_sq",
+        "label": "Pause squat Smith",
+        "weight": "165",
+        "kind": "squat"
+      },
+      {
+        "id": "light_bp",
+        "label": "Light bench",
+        "weight": "110",
+        "kind": "bench"
+      },
+      {
+        "id": "larssen",
+        "label": "Larssen press",
+        "weight": "117.5",
+        "kind": "bench"
+      },
+      {
+        "id": "var_dl",
+        "label": "Deficit DL",
+        "weight": "160",
+        "kind": "deadlift"
+      }
+    ]
+  },
+  {
+    "week": "S24",
+    "block": "B4",
+    "phase": "Peak",
+    "items": [
+      {
+        "id": "sq_top",
+        "label": "Squat top",
+        "weight": "195",
+        "kind": "squat"
+      },
+      {
+        "id": "sq_bo",
+        "label": "Squat back-off",
+        "weight": "172.5",
+        "kind": "squat"
+      },
+      {
+        "id": "bp_tech",
+        "label": "Bench técnico",
+        "weight": "128",
+        "kind": "bench"
+      },
+      {
+        "id": "dl_top",
+        "label": "Deadlift top",
+        "weight": "195",
+        "kind": "deadlift"
+      },
+      {
+        "id": "dl_bo",
+        "label": "Deadlift back-off",
+        "weight": "172.5",
+        "kind": "deadlift"
+      },
+      {
+        "id": "bp_top",
+        "label": "Bench topset",
+        "weight": "128",
+        "kind": "bench"
+      },
+      {
+        "id": "bp_bo",
+        "label": "Bench topset back-off",
+        "weight": "112.5",
+        "kind": "bench"
+      },
+      {
+        "id": "pause_sq",
+        "label": "Pause squat Smith",
+        "weight": "165",
+        "kind": "squat"
+      },
+      {
+        "id": "light_bp",
+        "label": "Light bench",
+        "weight": "110",
+        "kind": "bench"
+      },
+      {
+        "id": "cg_bp",
+        "label": "Close grip bench",
+        "weight": "112.5",
+        "kind": "bench"
+      },
+      {
+        "id": "var_dl",
+        "label": "Deficit DL",
+        "weight": "160",
+        "kind": "deadlift"
+      }
+    ]
+  },
+  {
+    "week": "S25",
+    "block": "B4",
+    "phase": "Peak",
+    "items": [
+      {
+        "id": "sq_top",
+        "label": "Squat top",
+        "weight": "200",
+        "kind": "squat"
+      },
+      {
+        "id": "sq_bo",
+        "label": "Squat back-off",
+        "weight": "175",
+        "kind": "squat"
+      },
+      {
+        "id": "bp_tech",
+        "label": "Bench técnico",
+        "weight": "131",
+        "kind": "bench"
+      },
+      {
+        "id": "dl_top",
+        "label": "Deadlift top",
+        "weight": "200",
+        "kind": "deadlift"
+      },
+      {
+        "id": "dl_bo",
+        "label": "Deadlift back-off",
+        "weight": "175",
+        "kind": "deadlift"
+      },
+      {
+        "id": "bp_top",
+        "label": "Bench topset",
+        "weight": "131",
+        "kind": "bench"
+      },
+      {
+        "id": "bp_bo",
+        "label": "Bench topset back-off",
+        "weight": "115",
+        "kind": "bench"
+      },
+      {
+        "id": "pause_sq",
+        "label": "Pause squat Smith",
+        "weight": "170",
+        "kind": "squat"
+      },
+      {
+        "id": "light_bp",
+        "label": "Light bench",
+        "weight": "112.5",
+        "kind": "bench"
+      },
+      {
+        "id": "larssen",
+        "label": "Larssen press",
+        "weight": "120",
+        "kind": "bench"
+      },
+      {
+        "id": "var_dl",
+        "label": "Deficit DL",
+        "weight": "165",
+        "kind": "deadlift"
+      }
+    ]
+  },
+  {
+    "week": "S26",
+    "block": "B4",
+    "phase": "Peak",
+    "items": [
+      {
+        "id": "sq_top",
+        "label": "Squat top",
+        "weight": "200",
+        "kind": "squat"
+      },
+      {
+        "id": "sq_bo",
+        "label": "Squat back-off",
+        "weight": "175",
+        "kind": "squat"
+      },
+      {
+        "id": "bp_tech",
+        "label": "Bench técnico",
+        "weight": "131",
+        "kind": "bench"
+      },
+      {
+        "id": "dl_top",
+        "label": "Deadlift top",
+        "weight": "200",
+        "kind": "deadlift"
+      },
+      {
+        "id": "dl_bo",
+        "label": "Deadlift back-off",
+        "weight": "175",
+        "kind": "deadlift"
+      },
+      {
+        "id": "bp_top",
+        "label": "Bench topset",
+        "weight": "131",
+        "kind": "bench"
+      },
+      {
+        "id": "bp_bo",
+        "label": "Bench topset back-off",
+        "weight": "115",
+        "kind": "bench"
+      },
+      {
+        "id": "pause_sq",
+        "label": "Pause squat Smith",
+        "weight": "170",
+        "kind": "squat"
+      },
+      {
+        "id": "light_bp",
+        "label": "Light bench",
+        "weight": "112.5",
+        "kind": "bench"
+      },
+      {
+        "id": "cg_bp",
+        "label": "Close grip bench",
+        "weight": "115",
+        "kind": "bench"
+      },
+      {
+        "id": "var_dl",
+        "label": "Deficit DL",
+        "weight": "165",
+        "kind": "deadlift"
+      }
+    ]
+  },
+  {
+    "week": "S27",
+    "block": "B4",
+    "phase": "Peak",
+    "items": [
+      {
+        "id": "sq_top",
+        "label": "Squat top",
+        "weight": "205",
+        "kind": "squat"
+      },
+      {
+        "id": "sq_bo",
+        "label": "Squat back-off",
+        "weight": "180",
+        "kind": "squat"
+      },
+      {
+        "id": "bp_tech",
+        "label": "Bench técnico",
+        "weight": "134",
+        "kind": "bench"
+      },
+      {
+        "id": "dl_top",
+        "label": "Deadlift top",
+        "weight": "205",
+        "kind": "deadlift"
+      },
+      {
+        "id": "dl_bo",
+        "label": "Deadlift back-off",
+        "weight": "180",
+        "kind": "deadlift"
+      },
+      {
+        "id": "bp_top",
+        "label": "Bench topset",
+        "weight": "134",
+        "kind": "bench"
+      },
+      {
+        "id": "bp_bo",
+        "label": "Bench topset back-off",
+        "weight": "117.5",
+        "kind": "bench"
+      },
+      {
+        "id": "pause_sq",
+        "label": "Pause squat Smith",
+        "weight": "175",
+        "kind": "squat"
+      },
+      {
+        "id": "light_bp",
+        "label": "Light bench",
+        "weight": "115",
+        "kind": "bench"
+      },
+      {
+        "id": "larssen",
+        "label": "Larssen press",
+        "weight": "122.5",
+        "kind": "bench"
+      },
+      {
+        "id": "var_dl",
+        "label": "Deficit DL",
+        "weight": "167.5",
+        "kind": "deadlift"
+      }
+    ]
+  },
+  {
+    "week": "S28",
+    "block": "B4",
+    "phase": "Peak",
+    "items": [
+      {
+        "id": "sq_top",
+        "label": "Squat top",
+        "weight": "205",
+        "kind": "squat"
+      },
+      {
+        "id": "sq_bo",
+        "label": "Squat back-off",
+        "weight": "180",
+        "kind": "squat"
+      },
+      {
+        "id": "bp_tech",
+        "label": "Bench técnico",
+        "weight": "134",
+        "kind": "bench"
+      },
+      {
+        "id": "dl_top",
+        "label": "Deadlift top",
+        "weight": "205",
+        "kind": "deadlift"
+      },
+      {
+        "id": "dl_bo",
+        "label": "Deadlift back-off",
+        "weight": "180",
+        "kind": "deadlift"
+      },
+      {
+        "id": "bp_top",
+        "label": "Bench topset",
+        "weight": "134",
+        "kind": "bench"
+      },
+      {
+        "id": "bp_bo",
+        "label": "Bench topset back-off",
+        "weight": "117.5",
+        "kind": "bench"
+      },
+      {
+        "id": "pause_sq",
+        "label": "Pause squat Smith",
+        "weight": "175",
+        "kind": "squat"
+      },
+      {
+        "id": "light_bp",
+        "label": "Light bench",
+        "weight": "115",
+        "kind": "bench"
+      },
+      {
+        "id": "cg_bp",
+        "label": "Close grip bench",
+        "weight": "117.5",
+        "kind": "bench"
+      },
+      {
+        "id": "var_dl",
+        "label": "Deficit DL",
+        "weight": "167.5",
+        "kind": "deadlift"
+      }
+    ]
+  },
+  {
+    "week": "S29",
+    "block": "B4",
+    "phase": "Peak",
+    "items": [
+      {
+        "id": "sq_top",
+        "label": "Squat top",
+        "weight": "210",
+        "kind": "squat"
+      },
+      {
+        "id": "sq_bo",
+        "label": "Squat back-off",
+        "weight": "185",
+        "kind": "squat"
+      },
+      {
+        "id": "bp_tech",
+        "label": "Bench técnico",
+        "weight": "137",
+        "kind": "bench"
+      },
+      {
+        "id": "dl_top",
+        "label": "Deadlift top",
+        "weight": "210",
+        "kind": "deadlift"
+      },
+      {
+        "id": "dl_bo",
+        "label": "Deadlift back-off",
+        "weight": "185",
+        "kind": "deadlift"
+      },
+      {
+        "id": "bp_top",
+        "label": "Bench topset",
+        "weight": "137",
+        "kind": "bench"
+      },
+      {
+        "id": "bp_bo",
+        "label": "Bench topset back-off",
+        "weight": "120",
+        "kind": "bench"
+      },
+      {
+        "id": "pause_sq",
+        "label": "Pause squat Smith",
+        "weight": "177.5",
+        "kind": "squat"
+      },
+      {
+        "id": "light_bp",
+        "label": "Light bench",
+        "weight": "117.5",
+        "kind": "bench"
+      },
+      {
+        "id": "larssen",
+        "label": "Larssen press",
+        "weight": "125",
+        "kind": "bench"
+      },
+      {
+        "id": "var_dl",
+        "label": "Deficit DL",
+        "weight": "172.5",
+        "kind": "deadlift"
+      }
+    ]
+  },
+  {
+    "week": "S30",
+    "block": "B4",
+    "phase": "Peak",
+    "items": [
+      {
+        "id": "sq_top",
+        "label": "Squat top",
+        "weight": "210",
+        "kind": "squat"
+      },
+      {
+        "id": "sq_bo",
+        "label": "Squat back-off",
+        "weight": "185",
+        "kind": "squat"
+      },
+      {
+        "id": "bp_tech",
+        "label": "Bench técnico",
+        "weight": "137",
+        "kind": "bench"
+      },
+      {
+        "id": "dl_top",
+        "label": "Deadlift top",
+        "weight": "210",
+        "kind": "deadlift"
+      },
+      {
+        "id": "dl_bo",
+        "label": "Deadlift back-off",
+        "weight": "185",
+        "kind": "deadlift"
+      },
+      {
+        "id": "bp_top",
+        "label": "Bench topset",
+        "weight": "137",
+        "kind": "bench"
+      },
+      {
+        "id": "bp_bo",
+        "label": "Bench topset back-off",
+        "weight": "120",
+        "kind": "bench"
+      },
+      {
+        "id": "pause_sq",
+        "label": "Pause squat Smith",
+        "weight": "177.5",
+        "kind": "squat"
+      },
+      {
+        "id": "light_bp",
+        "label": "Light bench",
+        "weight": "117.5",
+        "kind": "bench"
+      },
+      {
+        "id": "cg_bp",
+        "label": "Close grip bench",
+        "weight": "120",
+        "kind": "bench"
+      },
+      {
+        "id": "var_dl",
+        "label": "Deficit DL",
+        "weight": "172.5",
+        "kind": "deadlift"
+      }
+    ]
+  },
+  {
+    "week": "S31",
+    "block": "B4",
+    "phase": "Peak",
+    "items": [
+      {
+        "id": "sq_top",
+        "label": "Squat top",
+        "weight": "215",
+        "kind": "squat"
+      },
+      {
+        "id": "sq_bo",
+        "label": "Squat back-off",
+        "weight": "190",
+        "kind": "squat"
+      },
+      {
+        "id": "bp_tech",
+        "label": "Bench técnico",
+        "weight": "140",
+        "kind": "bench"
+      },
+      {
+        "id": "dl_top",
+        "label": "Deadlift top",
+        "weight": "215",
+        "kind": "deadlift"
+      },
+      {
+        "id": "dl_bo",
+        "label": "Deadlift back-off",
+        "weight": "190",
+        "kind": "deadlift"
+      },
+      {
+        "id": "bp_top",
+        "label": "Bench topset",
+        "weight": "140",
+        "kind": "bench"
+      },
+      {
+        "id": "bp_bo",
+        "label": "Bench topset back-off",
+        "weight": "122.5",
+        "kind": "bench"
+      },
+      {
+        "id": "pause_sq",
+        "label": "Pause squat Smith",
+        "weight": "182.5",
+        "kind": "squat"
+      },
+      {
+        "id": "light_bp",
+        "label": "Light bench",
+        "weight": "120",
+        "kind": "bench"
+      },
+      {
+        "id": "larssen",
+        "label": "Larssen press",
+        "weight": "130",
+        "kind": "bench"
+      },
+      {
+        "id": "var_dl",
+        "label": "Deficit DL",
+        "weight": "177.5",
+        "kind": "deadlift"
+      }
+    ]
+  },
+  {
+    "week": "S32",
+    "block": "B4",
+    "phase": "TEST 1RM",
+    "items": [
+      {
+        "id": "sq_top",
+        "label": "Squat top",
+        "weight": "200",
+        "kind": "squat"
+      },
+      {
+        "id": "sq_bo",
+        "label": "Squat back-off",
+        "weight": "175",
+        "kind": "squat"
+      },
+      {
+        "id": "bp_tech",
+        "label": "Bench técnico",
+        "weight": "140",
+        "kind": "bench"
+      },
+      {
+        "id": "dl_top",
+        "label": "Deadlift top",
+        "weight": "260",
+        "kind": "deadlift"
+      },
+      {
+        "id": "dl_bo",
+        "label": "Deadlift back-off",
+        "weight": "230",
+        "kind": "deadlift"
+      },
+      {
+        "id": "bp_top",
+        "label": "Bench topset",
+        "weight": "140",
+        "kind": "bench"
+      },
+      {
+        "id": "bp_bo",
+        "label": "Bench topset back-off",
+        "weight": "122.5",
+        "kind": "bench"
+      },
+      {
+        "id": "pause_sq",
+        "label": "Pause squat Smith",
+        "weight": "170",
+        "kind": "squat"
+      },
+      {
+        "id": "light_bp",
+        "label": "Light bench",
+        "weight": "120",
+        "kind": "bench"
+      },
+      {
+        "id": "cg_bp",
+        "label": "Close grip bench",
+        "weight": "122.5",
+        "kind": "bench"
+      },
+      {
+        "id": "var_dl",
+        "label": "Deficit DL",
+        "weight": "212.5",
+        "kind": "deadlift"
+      }
+    ]
+  },
+  {
+    "week": "S33",
+    "block": "B4",
+    "phase": "TEST 1RM",
+    "items": [
+      {
+        "id": "sq_top",
+        "label": "Squat top",
+        "weight": "200",
+        "kind": "squat"
+      },
+      {
+        "id": "sq_bo",
+        "label": "Squat back-off",
+        "weight": "175",
+        "kind": "squat"
+      },
+      {
+        "id": "bp_tech",
+        "label": "Bench técnico",
+        "weight": "140",
+        "kind": "bench"
+      },
+      {
+        "id": "dl_top",
+        "label": "Deadlift top",
+        "weight": "260",
+        "kind": "deadlift"
+      },
+      {
+        "id": "dl_bo",
+        "label": "Deadlift back-off",
+        "weight": "230",
+        "kind": "deadlift"
+      },
+      {
+        "id": "bp_top",
+        "label": "Bench topset",
+        "weight": "140",
+        "kind": "bench"
+      },
+      {
+        "id": "bp_bo",
+        "label": "Bench topset back-off",
+        "weight": "122.5",
+        "kind": "bench"
+      },
+      {
+        "id": "pause_sq",
+        "label": "Pause squat Smith",
+        "weight": "170",
+        "kind": "squat"
+      },
+      {
+        "id": "light_bp",
+        "label": "Light bench",
+        "weight": "120",
+        "kind": "bench"
+      },
+      {
+        "id": "larssen",
+        "label": "Larssen press",
+        "weight": "130",
+        "kind": "bench"
+      },
+      {
+        "id": "var_dl",
+        "label": "Deficit DL",
+        "weight": "212.5",
+        "kind": "deadlift"
+      }
+    ]
+  }
+];
+const PROGRAM_STATE_KEY = 'mx_program_state';
+
+function getDefaultProgramWeekKey() {
+  const pw = typeof getCurrentProgWeek === 'function' ? getCurrentProgWeek() : null;
+  const key = pw ? 'S' + pw.wnum : null;
+  return PROGRAM_TABLE.some(w => w.week === key) ? key : (PROGRAM_TABLE[0] ? PROGRAM_TABLE[0].week : 'S2');
+}
+
+function getProgramState() {
+  const st = LS.get(PROGRAM_STATE_KEY) || {currentWeek:null, checks:{}};
+  if(!st.checks) st.checks = {};
+  if(!st.currentWeek || !PROGRAM_TABLE.some(w => w.week === st.currentWeek)) st.currentWeek = getDefaultProgramWeekKey();
+  return st;
+}
+function saveProgramState(st) { LS.set(PROGRAM_STATE_KEY, st); }
+function saveProgramStateData(st) { saveProgramState(st || {currentWeek:getDefaultProgramWeekKey(), checks:{}}); }
+function getProgramWeekRow(weekKey) { return PROGRAM_TABLE.find(w => w.week === weekKey) || PROGRAM_TABLE[0]; }
+function getSelectedProgramWeekRow() { return getProgramWeekRow(getProgramState().currentWeek); }
+function programCheckId(week, itemId) { return week + '__' + itemId; }
+function programCompletedCount(row, st) {
+  const weekChecks = (st.checks && st.checks[row.week]) || {};
+  return row.items.filter(it => !!weekChecks[it.id]).length;
+}
+function setProgramWeek(week) {
+  const st = getProgramState();
+  st.currentWeek = week;
+  saveProgramState(st);
+  renderTrain();
+  renderDash();
+}
+function toggleProgramCheck(itemId, checked) {
+  const st = getProgramState();
+  const row = getProgramWeekRow(st.currentWeek);
+  if(!st.checks[row.week]) st.checks[row.week] = {};
+  st.checks[row.week][itemId] = !!checked;
+  saveProgramState(st);
+  renderProgramChecklist();
+  renderDash();
+}
+function renderProgramChecklist() {
+  const host = document.getElementById('programChecklist');
+  const st = getProgramState();
+  const row = getProgramWeekRow(st.currentWeek);
+  const weekChecks = st.checks[row.week] || {};
+  const done = programCompletedCount(row, st);
+  const total = row.items.length;
+  const options = PROGRAM_TABLE.map(w => `<option value="${w.week}" ${w.week===row.week?'selected':''}>${w.week} · ${w.block} · ${w.phase}</option>`).join('');
+  const body = row.items.map(it => {
+    const checked = !!weekChecks[it.id];
+    return `<label class="program-check-row ${checked?'done':''}">
+      <input type="checkbox" ${checked?'checked':''} onchange="toggleProgramCheck('${it.id}', this.checked)">
+      <div style="min-width:0;flex:1;">
+        <div class="program-check-name">${it.label}</div>
+        <div class="program-check-kind">${it.kind}</div>
+      </div>
+      <div class="program-check-weight">${it.weight}<span>kg</span></div>
+    </label>`;
+  }).join('');
+  const html = `<div class="scard" id="programChecklist">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:12px;">
+      <div>
+        <div class="stitle" style="margin-bottom:5px;">Program checklist</div>
+        <div style="font-size:13px;color:var(--text3);">${row.block} · ${row.phase} · ${done}/${total} done</div>
+      </div>
+      <select class="ex-sel" style="width:auto;min-width:132px;margin-bottom:0;" onchange="setProgramWeek(this.value)">${options}</select>
+    </div>
+    <div class="prog-bar-track" style="margin-bottom:12px;"><div class="prog-bar-fill" style="width:${total ? Math.round(done/total*100) : 0}%"></div></div>
+    <div style="display:flex;flex-direction:column;gap:7px;">${body}</div>
+  </div>`;
+  if(host) { host.outerHTML = html; return ''; }
+  return html;
+}
+function formatProgramSbd(row) {
+  const byId = Object.fromEntries(row.items.map(it => [it.id, it.weight]));
+  return {
+    squat: [byId.sq_top, byId.sq_bo].filter(Boolean).join(' / '),
+    bench: [byId.bp_tech, byId.bp_top, byId.bp_bo].filter(Boolean).join(' / '),
+    deadlift: [byId.dl_top, byId.dl_bo].filter(Boolean).join(' / ')
+  };
+}
 
 function getAllExercises() {
   const {customEx} = getData();
@@ -962,39 +3399,31 @@ function renderView(v) {
 function renderDashProgWeek() {
   const el = document.getElementById('dashProgWeek');
   if(!el) return;
-  const pw = getCurrentProgWeek();
-  if(!pw) { el.innerHTML = '<div style="font-size:13px;color:var(--text3);padding:4px 0;">Program starts May 11</div>'; return; }
-  const phaseClass = pw.phase==='deload'?'deload':pw.phase==='test'?'test':'';
-  const pct = getProgramProgressPct();
+  const st = getProgramState();
+  const row = getProgramWeekRow(st.currentWeek);
+  if(!row) { el.innerHTML = '<div style="font-size:13px;color:var(--text3);padding:4px 0;">No program loaded</div>'; return; }
+  const done = programCompletedCount(row, st);
+  const total = row.items.length;
+  const pct = total ? Math.round(done / total * 100) : 0;
+  const phaseClass = /deload/i.test(row.phase) ? 'deload' : /test/i.test(row.phase) ? 'test' : '';
+  const sbd = formatProgramSbd(row);
   el.innerHTML = `
     <div class="card" style="padding:14px 16px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
         <div>
-          <span style="font-family:'Bebas Neue',sans-serif;font-size:30px;color:var(--white);line-height:1;">S${pw.wnum}</span>
-          <span style="font-size:12px;color:var(--text3);margin-left:8px;">${pw.dates}</span>
+          <span style="font-family:'Bebas Neue',sans-serif;font-size:30px;color:var(--white);line-height:1;">${row.week}</span>
+          <span style="font-size:12px;color:var(--text3);margin-left:8px;">${row.block}</span>
         </div>
-        <span class="prog-phase-badge ${phaseClass}">${pw.phaseLabel}</span>
+        <span class="prog-phase-badge ${phaseClass}">${row.phase}</span>
       </div>
       <div class="prog-bar-wrap">
-        <div class="prog-bar-label"><span>Program progress</span><span>${pct}%</span></div>
+        <div class="prog-bar-label"><span>Checklist progress</span><span>${done}/${total}</span></div>
         <div class="prog-bar-track"><div class="prog-bar-fill" style="width:${pct}%"></div></div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;">
-        <div style="background:var(--bg3);border-radius:var(--rs);padding:8px 10px;">
-          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;">Squat</div>
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--white);line-height:1;">${pw.sq}kg</div>
-          <div style="font-size:10px;color:var(--text3);">${pw.sq_pct}% · bo ${pw.sq_bo}</div>
-        </div>
-        <div style="background:var(--bg3);border-radius:var(--rs);padding:8px 10px;">
-          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;">Bench</div>
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--white);line-height:1;">${pw.bp}kg</div>
-          <div style="font-size:10px;color:var(--text3);">${pw.bp_pct}% · bo ${pw.bp_bo}</div>
-        </div>
-        <div style="background:var(--bg3);border-radius:var(--rs);padding:8px 10px;">
-          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;">DL</div>
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--white);line-height:1;">${pw.dl}kg</div>
-          <div style="font-size:10px;color:var(--text3);">${pw.dl_pct}% · bo ${pw.dl_bo}</div>
-        </div>
+      <div class="program-sbd-grid">
+        <div class="program-sbd-cell"><div class="program-sbd-label">Squat</div><div class="program-sbd-value">${sbd.squat || '—'}<span style="font-size:11px;color:var(--text3);font-family:'DM Sans',sans-serif;"> kg</span></div></div>
+        <div class="program-sbd-cell"><div class="program-sbd-label">Bench</div><div class="program-sbd-value">${sbd.bench || '—'}<span style="font-size:11px;color:var(--text3);font-family:'DM Sans',sans-serif;"> kg</span></div></div>
+        <div class="program-sbd-cell"><div class="program-sbd-label">DL</div><div class="program-sbd-value">${sbd.deadlift || '—'}<span style="font-size:11px;color:var(--text3);font-family:'DM Sans',sans-serif;"> kg</span></div></div>
       </div>
     </div>`;
 }
@@ -1653,12 +4082,12 @@ function renderTrain() {
   const {templates} = getData();
   const content = document.getElementById('trainContent');
   if(!templates.length) {
-    content.innerHTML = `<div class="empty"><div class="empty-icon">🏋️</div><div class="empty-t">No routines</div><div class="empty-s">Create a routine first in the Routines tab</div></div>`;
+    content.innerHTML = renderProgramChecklist() + `<div class="empty"><div class="empty-icon">🏋️</div><div class="empty-t">No routines</div><div class="empty-s">Create a routine first in the Routines tab</div></div>`;
     return;
   }
 
   // Always show the picker; add a resume banner if a session is in progress
-  let html = '';
+  let html = renderProgramChecklist();
   if(activeSession) {
     html += `<div class="sess-resume-banner" onclick="clickFeedback(); resumeSession()">
       <div style="display:flex;align-items:center;gap:10px;">
@@ -3271,6 +5700,7 @@ function importData(e) {
       if(data.templates) saveTplData(data.templates);
       if(data.sessions) saveSessData(data.sessions);
       if(data.customEx) saveExData(data.customEx);
+      if(data.programState) saveProgramStateData(data.programState);
       if(data.goals) LS.set('mx_goals', data.goals);
       closeModal('mSettings');
       renderAll();
@@ -3289,7 +5719,7 @@ function resetData() {
     inp.style.borderColor = '#cc4444';
     return;
   }
-  ['mx_1rm','mx_tpl','mx_sess','mx_ex','mx_goals'].forEach(k => localStorage.removeItem(k));
+  ['mx_1rm','mx_tpl','mx_sess','mx_ex','mx_goals','mx_goals_v2','mx_program_state'].forEach(k => localStorage.removeItem(k));
   closeModal('mSettings');
   inp.value = '';
   renderAll();
