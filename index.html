@@ -916,9 +916,9 @@ body:after{
 .focus-loader-load{font-size:14px;color:rgba(255,255,255,.58);white-space:nowrap;}
 .focus-loader .plate-bar{height:72px;}
 .focus-loader .plate-sleeve{width:118px;height:16px;border-radius:10px;}
-.focus-loader .plate-collar{width:18px;height:56px;border-radius:6px;margin-right:6px;}
-.focus-loader .plate-stack{gap:4px;}
-.focus-loader .plate-disc{width:48px;border-radius:7px;}
+.focus-loader .plate-collar{width:14px;height:56px;border-radius:5px;margin-right:5px;}
+.focus-loader .plate-stack{gap:3px;}
+.focus-loader .plate-disc{width:22px;border-radius:5px;}
 .focus-loader .plate-25{height:64px;background:linear-gradient(180deg,#ff3045,#d71930);}
 .focus-loader .plate-20{height:62px;background:linear-gradient(180deg,#2f6fff,#1741a5);}
 .focus-loader .plate-15{height:58px;}
@@ -927,44 +927,12 @@ body:after{
 .focus-loader .plate-2-5{height:42px;}
 .focus-loader .plate-1-25{height:36px;}
 .focus-loader-note{font-size:12px;color:var(--text3);margin-top:10px;}
-.focus-metrics{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:20px;}
-.focus-metric{
-  border:1px solid rgba(255,255,255,.10);
-  border-radius:15px;
-  background:rgba(0,0,0,.28);
-  padding:12px 13px;
-  min-width:0;
-}
-.focus-metric-label{
-  display:block;
-  font-size:10px;
-  font-weight:900;
-  letter-spacing:1.8px;
-  text-transform:uppercase;
-  color:rgba(255,255,255,.32);
-  margin-bottom:7px;
-}
-.focus-metric-value{
-  font-size:26px;
-  line-height:1;
-  font-weight:900;
-  color:#fff;
-  white-space:nowrap;
-}
-.focus-rpe-input{
-  width:100%;
-  border:0;
-  background:transparent;
-  color:#fff;
-  font-size:26px;
-  line-height:1;
-  font-weight:900;
-  font-family:'DM Sans',sans-serif;
-  outline:none;
-  padding:0;
-}
-.focus-rest-metric{cursor:pointer;text-align:left;font-family:'DM Sans',sans-serif;}
-.focus-rest-metric .rest-timer-display{font-family:'DM Sans',sans-serif;font-size:26px;font-weight:900;min-width:0;}
+.focus-metric-label{display:block;font-size:10px;font-weight:900;letter-spacing:1.8px;text-transform:uppercase;color:rgba(255,255,255,.32);}
+.focus-rest-btn{width:100%;margin-top:20px;background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.10);border-radius:18px;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:background .15s,border-color .15s;font-family:'DM Sans',sans-serif;text-align:left;}
+.focus-rest-btn:active{background:rgba(255,255,255,.06);}
+.focus-rest-btn .rest-timer-display{font-size:36px;font-weight:900;line-height:1;color:#fff;letter-spacing:1px;}
+.focus-rest-btn .rest-timer-display.running{color:#cc2222;}
+.focus-rest-btn .focus-metric-label{margin-bottom:0;}
 .focus-complete-btn{margin-top:20px;border-radius:21px;padding:20px;font-size:18px;}
 .rpe-overlay{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:1200;display:flex;align-items:flex-end;justify-content:center;padding:0 0 32px;animation:fadeIn .18s ease-out;}
 .rpe-sheet{background:#141414;border:1px solid rgba(255,255,255,.10);border-radius:28px 28px 28px 28px;padding:24px 20px 20px;width:100%;max-width:420px;display:flex;flex-direction:column;gap:14px;animation:slideUp .22s cubic-bezier(.34,1.56,.64,1);}
@@ -1016,6 +984,8 @@ body:after{
 .focus-set-main{min-width:0;}
 .focus-set-load{font-size:20px;font-weight:900;color:#fff;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .focus-set-role{font-size:14px;color:rgba(255,255,255,.38);margin-top:4px;}
+.focus-set-del{background:rgba(204,34,34,.15);border:1px solid rgba(204,34,34,.30);border-radius:8px;color:#ff5555;font-size:11px;font-weight:900;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .15s,transform .12s;flex-shrink:0;line-height:1;padding:0;}
+.focus-set-del:active{background:rgba(204,34,34,.38);transform:scale(.88);}
 .focus-current-tag{
   font-size:11px;
   font-weight:900;
@@ -2669,6 +2639,22 @@ function confirmRpeAndAdvance(rpeValue, ei, si) {
   renderActiveSession();
 }
 
+function deleteFocusedSet(ei, si) {
+  if(!activeSession || !activeSession.exercises[ei]) return;
+  collectFocusedSetFromDOM(false);
+  const ex = activeSession.exercises[ei];
+  if(ex.sets.length <= 1) return;
+  ex.sets.splice(si, 1);
+  const runner = normalizeRunner();
+  let newSi = runner.setIndex;
+  if(runner.exerciseIndex === ei) {
+    if(newSi >= ex.sets.length) newSi = ex.sets.length - 1;
+    activeSession.runner = {exerciseIndex: ei, setIndex: newSi};
+  }
+  saveActiveSession();
+  renderActiveSession();
+}
+
 function addFocusedSet(ei) {
   if(!activeSession || !activeSession.exercises[ei]) return;
   collectFocusedSetFromDOM(false);
@@ -2738,14 +2724,19 @@ function renderFocusedActiveSession() {
     const current = idx === si;
     const cls = `${done ? ' done' : ''}${current ? ' current' : ''}`;
     const badge = done && !current ? '✓' : idx + 1;
-    return `<button class="focus-set-pill${cls}" onclick="clickFeedback(); selectFocusedSet(${ei},${idx})">
+    const rightSlot = current
+      ? '<div class="focus-current-tag">Current</div>'
+      : ex.sets.length > 1
+        ? `<button class="focus-set-del" onclick="event.stopPropagation(); clickFeedback(); deleteFocusedSet(${ei},${idx})" title="Delete set">✕</button>`
+        : '<div></div>';
+    return `<div class="focus-set-pill${cls}" onclick="clickFeedback(); selectFocusedSet(${ei},${idx})">
       <div class="focus-set-badge">${badge}</div>
       <div class="focus-set-main">
         <div class="focus-set-load">${formatFocusedLoad(item)}</div>
         <div class="focus-set-role">${htmlSafe(getFocusedSetRole(ex, idx))}</div>
       </div>
-      ${current ? '<div class="focus-current-tag">Current</div>' : ''}
-    </button>`;
+      ${rightSlot}
+    </div>`;
   }).join('');
 
   content.innerHTML = `<div class="focus-shell">
@@ -2786,20 +2777,10 @@ function renderFocusedActiveSession() {
 
         <div id="focusLoaderSlot">${renderFocusPlateLoaderHtml(ei, si, set.weight)}</div>
 
-        <div class="focus-metrics">
-          <label class="focus-metric">
-            <span class="focus-metric-label">RPE</span>
-            <input type="number" class="focus-rpe-input" value="${htmlSafe(getRpeDisplayValue(set.rpe))}" placeholder="—" min="1" max="10" step="0.5" inputmode="decimal" oninput="focusedSetInputChanged()">
-          </label>
-          <div class="focus-metric">
-            <span class="focus-metric-label">E1RM</span>
-            <div class="focus-metric-value" id="focusE1rm">${e1 || '—'}</div>
-          </div>
-          <button class="focus-metric focus-rest-metric" onclick="clickFeedback(); toggleRestTimer()" type="button">
-            <span class="focus-metric-label">Rest</span>
-            <div class="focus-metric-value rest-timer-display${rt.running?' running':''}" id="restTimerDisplay">${rtDisplay}</div>
-          </button>
-        </div>
+        <button class="focus-rest-btn" onclick="clickFeedback(); toggleRestTimer()" type="button">
+          <span class="focus-metric-label">Rest Timer</span>
+          <div class="focus-metric-value rest-timer-display${rt.running?' running':''}" id="restTimerDisplay">${rtDisplay}</div>
+        </button>
 
         <button class="btn focus-complete-btn" onclick="clickFeedback(); ${completeAction}">${completeLabel}</button>
       </div>
