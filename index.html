@@ -82,12 +82,15 @@ html,body{height:100%;background:var(--bg0);color:var(--text1);font-family:'DM S
 .tpl-picker-search{background:var(--bg3);border:1px solid var(--bg4);border-radius:8px;color:var(--text1);padding:8px 10px;margin-bottom:6px;width:100%;outline:none;}
 .tpl-picker-select{background:var(--bg3);border:1px solid var(--bg4);border-radius:8px;color:var(--text1);padding:8px 10px;width:100%;margin-bottom:6px;}
 /* TRAIN */
-.train-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-.tpick{background:var(--bg2);border:1px solid var(--bg3);border-radius:var(--r);padding:18px 14px;cursor:pointer;transition:all .15s;display:flex;flex-direction:column;gap:4px;}
+.train-grid{display:flex;flex-direction:column;gap:10px;}
+.tpick{background:var(--bg2);border:1px solid var(--bg3);border-radius:var(--r);padding:18px 18px 16px;cursor:pointer;transition:all .15s;display:flex;flex-direction:column;gap:10px;}
 .tpick:active{background:var(--bg3);}
-.tpick-name{font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:1px;color:var(--white);line-height:1;}
-.tpick-exs{font-size:12px;color:var(--text3);line-height:1.4;}
-.tpick-last{font-size:12px;color:var(--bg5);margin-top:4px;}
+.tpick-header{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;}
+.tpick-name{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:1px;color:var(--white);line-height:1;}
+.tpick-last{font-size:11px;color:var(--bg5);font-weight:600;text-transform:uppercase;letter-spacing:.8px;white-space:nowrap;margin-top:4px;}
+.tpick-tags{display:flex;flex-wrap:wrap;gap:5px;}
+.tpick-tag{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.09);border-radius:6px;padding:4px 8px;font-size:11px;font-weight:600;color:var(--text3);letter-spacing:.3px;white-space:nowrap;}
+.tpick-tag-more{background:none;border:none;color:var(--text3);font-size:11px;font-weight:700;padding:4px 2px;opacity:.5;}
 .sess-resume-banner{background:#1a0a0a;border:1px solid rgba(204,34,34,0.4);border-radius:var(--r);padding:14px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;transition:background .15s;}
 .sess-resume-banner:active{background:#2a0a0a;}
 .sess-resume-dot{width:8px;height:8px;border-radius:50%;background:#cc2222;animation:pulse-dot 1.2s ease-in-out infinite;}
@@ -963,16 +966,17 @@ body:after{
 .focus-rest-metric{cursor:pointer;text-align:left;font-family:'DM Sans',sans-serif;}
 .focus-rest-metric .rest-timer-display{font-family:'DM Sans',sans-serif;font-size:26px;font-weight:900;min-width:0;}
 .focus-complete-btn{margin-top:20px;border-radius:21px;padding:20px;font-size:18px;}
-.rpe-popup{margin-top:16px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:21px;padding:18px 16px;display:flex;flex-direction:column;gap:12px;animation:fadeIn .18s ease-out;}
+.rpe-overlay{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:1200;display:flex;align-items:flex-end;justify-content:center;padding:0 0 32px;animation:fadeIn .18s ease-out;}
+.rpe-sheet{background:#141414;border:1px solid rgba(255,255,255,.10);border-radius:28px 28px 28px 28px;padding:24px 20px 20px;width:100%;max-width:420px;display:flex;flex-direction:column;gap:14px;animation:slideUp .22s cubic-bezier(.34,1.56,.64,1);}
 .rpe-popup-label{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:2px;color:rgba(255,255,255,.38);text-align:center;}
 .rpe-popup-btns{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
-.rpe-popup-btn{border:none;border-radius:14px;padding:14px 8px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:800;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;transition:transform .14s,opacity .14s;}
+.rpe-popup-btn{border:none;border-radius:16px;padding:18px 8px 14px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:800;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;transition:transform .14s,opacity .14s;}
 .rpe-popup-btn:active{transform:scale(.94);opacity:.8;}
-.rpe-popup-btn .rpe-emoji{font-size:22px;line-height:1;}
+.rpe-popup-btn .rpe-emoji{font-size:26px;line-height:1;}
 .rpe-popup-btn.rpe-easy-btn{background:rgba(76,175,80,.18);color:#78c878;border:1px solid rgba(76,175,80,.30);}
 .rpe-popup-btn.rpe-medium-btn{background:rgba(230,172,0,.16);color:#e6ac00;border:1px solid rgba(230,172,0,.28);}
 .rpe-popup-btn.rpe-hard-btn{background:rgba(204,34,34,.18);color:#ff6666;border:1px solid rgba(204,34,34,.32);}
-.rpe-skip-btn{background:none;border:none;color:rgba(255,255,255,.28);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;text-align:center;padding:4px;transition:color .15s;}
+.rpe-skip-btn{background:none;border:none;color:rgba(255,255,255,.28);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;text-align:center;padding:6px;transition:color .15s;letter-spacing:.5px;}
 .rpe-skip-btn:active{color:rgba(255,255,255,.55);}
 .focus-progress-head{display:flex;align-items:center;justify-content:space-between;gap:10px;}
 .focus-progress-count{font-size:13px;color:rgba(255,255,255,.48);}
@@ -2344,12 +2348,15 @@ function renderTrain() {
     const card = document.createElement('div');
     card.className = 'tpick';
     const exNames = t.exercises.map(ex => typeof ex === 'object' ? ex.name : ex);
-    const displayEx = exNames.slice(0, 4).join(' · ');
-    const moreCount = exNames.length > 4 ? ` +${exNames.length - 4}` : '';
+    const visibleTags = exNames.slice(0, 5).map(n => `<span class="tpick-tag">${n}</span>`).join('');
+    const moreCount = exNames.length > 5 ? `<span class="tpick-tag-more">+${exNames.length - 5} more</span>` : '';
+    const lastLabel = last ? fmtDate(last.date) : 'No history';
     card.innerHTML = `
-      <div class="tpick-name">${t.name}</div>
-      <div class="tpick-exs">${displayEx}${moreCount}</div>
-      <div class="tpick-last">${last ? 'Last: '+fmtDate(last.date) : 'No history'}</div>`;
+      <div class="tpick-header">
+        <div class="tpick-name">${t.name}</div>
+        <div class="tpick-last">${lastLabel}</div>
+      </div>
+      <div class="tpick-tags">${visibleTags}${moreCount}</div>`;
     card.addEventListener('click', () => {
       clickFeedback();
       // If tapping the same template that's in progress, just resume
@@ -2611,56 +2618,54 @@ function completeFocusedSet() {
   set.restTimerStarted = true;
   saveActiveSession();
 
-  // Show RPE popup inline instead of advancing immediately
-  const completeBtn = document.querySelector('.focus-complete-btn');
-  if(completeBtn && !wasDone) {
-    completeBtn.style.display = 'none';
-    const popup = document.createElement('div');
-    popup.className = 'rpe-popup';
-    popup.id = 'rpePopup';
-    popup.innerHTML = `
-      <div class="rpe-popup-label">How hard was that set?</div>
-      <div class="rpe-popup-btns">
-        <button class="rpe-popup-btn rpe-easy-btn" onclick="clickFeedback(); confirmRpeAndAdvance('easy')">
-          <span class="rpe-emoji">🟢</span>Easy
-        </button>
-        <button class="rpe-popup-btn rpe-medium-btn" onclick="clickFeedback(); confirmRpeAndAdvance('medium')">
-          <span class="rpe-emoji">🟡</span>Medium
-        </button>
-        <button class="rpe-popup-btn rpe-hard-btn" onclick="clickFeedback(); confirmRpeAndAdvance('hard')">
-          <span class="rpe-emoji">🔴</span>Hard
-        </button>
-      </div>
-      <button class="rpe-skip-btn" onclick="clickFeedback(); confirmRpeAndAdvance('')">Skip</button>
-    `;
-    completeBtn.parentNode.insertBefore(popup, completeBtn.nextSibling);
+  // Show RPE popup as floating overlay
+  if(!wasDone) {
     startRestTimer();
+    showRpePopup(runner.exerciseIndex, runner.setIndex);
     return;
   }
 
-  // Already done set (Save Set) or no button found — advance directly
+  // Already done set (Save Set) — advance directly
   const next = wasDone ? findFirstPendingOverall() : findNextPendingSet(runner.exerciseIndex, runner.setIndex);
   if(next) {
     activeSession.runner = next;
-    if(!wasDone) startRestTimer();
   }
   renderActiveSession();
 }
 
-function confirmRpeAndAdvance(rpeValue) {
+function showRpePopup(ei, si) {
+  const overlay = document.createElement('div');
+  overlay.className = 'rpe-overlay';
+  overlay.id = 'rpeOverlay';
+  overlay.innerHTML = `
+    <div class="rpe-sheet">
+      <div class="rpe-popup-label">How hard was that set?</div>
+      <div class="rpe-popup-btns">
+        <button class="rpe-popup-btn rpe-easy-btn" onclick="clickFeedback(); confirmRpeAndAdvance('easy',${ei},${si})">
+          <span class="rpe-emoji">🟢</span>Easy
+        </button>
+        <button class="rpe-popup-btn rpe-medium-btn" onclick="clickFeedback(); confirmRpeAndAdvance('medium',${ei},${si})">
+          <span class="rpe-emoji">🟡</span>Medium
+        </button>
+        <button class="rpe-popup-btn rpe-hard-btn" onclick="clickFeedback(); confirmRpeAndAdvance('hard',${ei},${si})">
+          <span class="rpe-emoji">🔴</span>Hard
+        </button>
+      </div>
+      <button class="rpe-skip-btn" onclick="clickFeedback(); confirmRpeAndAdvance('',${ei},${si})">Skip</button>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+}
+
+function confirmRpeAndAdvance(rpeValue, ei, si) {
+  const overlay = document.getElementById('rpeOverlay');
+  if(overlay) overlay.remove();
   if(!activeSession) return;
-  const runner = normalizeRunner();
-  const ei = runner.exerciseIndex;
-  const si = runner.setIndex;
   const set = activeSession.exercises[ei] && activeSession.exercises[ei].sets[si];
   if(set && rpeValue) set.rpe = rpeValue;
-  saveActiveSession();
-
-  const ex = activeSession.exercises[ei];
   const next = findNextPendingSet(ei, si);
-  if(next) {
-    activeSession.runner = next;
-  }
+  if(next) activeSession.runner = next;
+  saveActiveSession();
   renderActiveSession();
 }
 
