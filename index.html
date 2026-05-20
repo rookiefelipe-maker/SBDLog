@@ -918,7 +918,7 @@ body:after{
 .focus-loader .plate-sleeve{width:118px;height:16px;border-radius:10px;}
 .focus-loader .plate-collar{width:14px;height:56px;border-radius:5px;margin-right:5px;}
 .focus-loader .plate-stack{gap:3px;}
-.focus-loader .plate-disc{width:22px;border-radius:5px;}
+.focus-loader .plate-disc{width:14px;border-radius:4px;}
 .focus-loader .plate-25{height:64px;background:linear-gradient(180deg,#ff3045,#d71930);}
 .focus-loader .plate-20{height:62px;background:linear-gradient(180deg,#2f6fff,#1741a5);}
 .focus-loader .plate-15{height:58px;}
@@ -928,11 +928,14 @@ body:after{
 .focus-loader .plate-1-25{height:36px;}
 .focus-loader-note{font-size:12px;color:var(--text3);margin-top:10px;}
 .focus-metric-label{display:block;font-size:10px;font-weight:900;letter-spacing:1.8px;text-transform:uppercase;color:rgba(255,255,255,.32);}
-.focus-rest-btn{width:100%;margin-top:20px;background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.10);border-radius:18px;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:background .15s,border-color .15s;font-family:'DM Sans',sans-serif;text-align:left;}
+.focus-timer-pr-row{display:flex;gap:10px;margin-top:20px;}
+.focus-rest-btn{flex:1;background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.10);border-radius:18px;padding:16px 18px;display:flex;flex-direction:column;gap:7px;cursor:pointer;transition:background .15s;font-family:'DM Sans',sans-serif;text-align:left;}
 .focus-rest-btn:active{background:rgba(255,255,255,.06);}
-.focus-rest-btn .rest-timer-display{font-size:36px;font-weight:900;line-height:1;color:#fff;letter-spacing:1px;}
+.focus-rest-btn .rest-timer-display{font-size:32px;font-weight:900;line-height:1;color:#fff;letter-spacing:1px;}
 .focus-rest-btn .rest-timer-display.running{color:#cc2222;}
-.focus-rest-btn .focus-metric-label{margin-bottom:0;}
+.focus-pr-card{flex:1;background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.10);border-radius:18px;padding:16px 18px;display:flex;flex-direction:column;gap:7px;}
+.focus-pr-value{font-size:32px;font-weight:900;line-height:1;color:rgba(255,255,255,.75);}
+.focus-pr-unit{font-size:14px;font-weight:700;color:rgba(255,255,255,.32);margin-left:1px;}
 .focus-complete-btn{margin-top:20px;border-radius:21px;padding:20px;font-size:18px;}
 .rpe-overlay{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:1200;display:flex;align-items:flex-end;justify-content:center;padding:0 0 32px;animation:fadeIn .18s ease-out;}
 .rpe-sheet{background:#141414;border:1px solid rgba(255,255,255,.10);border-radius:28px 28px 28px 28px;padding:24px 20px 20px;width:100%;max-width:420px;display:flex;flex-direction:column;gap:14px;animation:slideUp .22s cubic-bezier(.34,1.56,.64,1);}
@@ -1016,7 +1019,7 @@ body:after{
   .focus-loader .plate-bar{height:66px;}
   .focus-loader .plate-sleeve{width:92px;height:15px;}
   .focus-loader .plate-collar{width:16px;height:52px;}
-  .focus-loader .plate-disc{width:38px;}
+  .focus-loader .plate-disc{width:10px;}
   .focus-loader .plate-25{height:60px;}
   .focus-loader .plate-20{height:58px;}
   .focus-loader .plate-15{height:54px;}
@@ -2777,10 +2780,16 @@ function renderFocusedActiveSession() {
 
         <div id="focusLoaderSlot">${renderFocusPlateLoaderHtml(ei, si, set.weight)}</div>
 
-        <button class="focus-rest-btn" onclick="clickFeedback(); toggleRestTimer()" type="button">
-          <span class="focus-metric-label">Rest Timer</span>
-          <div class="focus-metric-value rest-timer-display${rt.running?' running':''}" id="restTimerDisplay">${rtDisplay}</div>
-        </button>
+        <div class="focus-timer-pr-row">
+          <button class="focus-rest-btn" onclick="clickFeedback(); toggleRestTimer()" type="button">
+            <span class="focus-metric-label">Rest Timer</span>
+            <div class="focus-metric-value rest-timer-display${rt.running?' running':''}" id="restTimerDisplay">${rtDisplay}</div>
+          </button>
+          ${ex.histPR ? `<div class="focus-pr-card">
+            <span class="focus-metric-label">Best PR</span>
+            <div class="focus-pr-value">${ex.histPR.w}<span class="focus-pr-unit">kg</span> × ${ex.histPR.r}</div>
+          </div>` : ''}
+        </div>
 
         <button class="btn focus-complete-btn" onclick="clickFeedback(); ${completeAction}">${completeLabel}</button>
       </div>
