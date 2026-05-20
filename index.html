@@ -963,6 +963,17 @@ body:after{
 .focus-rest-metric{cursor:pointer;text-align:left;font-family:'DM Sans',sans-serif;}
 .focus-rest-metric .rest-timer-display{font-family:'DM Sans',sans-serif;font-size:26px;font-weight:900;min-width:0;}
 .focus-complete-btn{margin-top:20px;border-radius:21px;padding:20px;font-size:18px;}
+.rpe-popup{margin-top:16px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:21px;padding:18px 16px;display:flex;flex-direction:column;gap:12px;animation:fadeIn .18s ease-out;}
+.rpe-popup-label{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:2px;color:rgba(255,255,255,.38);text-align:center;}
+.rpe-popup-btns{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+.rpe-popup-btn{border:none;border-radius:14px;padding:14px 8px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:800;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;transition:transform .14s,opacity .14s;}
+.rpe-popup-btn:active{transform:scale(.94);opacity:.8;}
+.rpe-popup-btn .rpe-emoji{font-size:22px;line-height:1;}
+.rpe-popup-btn.rpe-easy-btn{background:rgba(76,175,80,.18);color:#78c878;border:1px solid rgba(76,175,80,.30);}
+.rpe-popup-btn.rpe-medium-btn{background:rgba(230,172,0,.16);color:#e6ac00;border:1px solid rgba(230,172,0,.28);}
+.rpe-popup-btn.rpe-hard-btn{background:rgba(204,34,34,.18);color:#ff6666;border:1px solid rgba(204,34,34,.32);}
+.rpe-skip-btn{background:none;border:none;color:rgba(255,255,255,.28);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;text-align:center;padding:4px;transition:color .15s;}
+.rpe-skip-btn:active{color:rgba(255,255,255,.55);}
 .focus-progress-head{display:flex;align-items:center;justify-content:space-between;gap:10px;}
 .focus-progress-count{font-size:13px;color:rgba(255,255,255,.48);}
 .focus-set-list{display:flex;flex-direction:column;gap:12px;}
@@ -2598,12 +2609,58 @@ function completeFocusedSet() {
   const wasDone = isSetDone(set);
   set.done = true;
   set.restTimerStarted = true;
+  saveActiveSession();
+
+  // Show RPE popup inline instead of advancing immediately
+  const completeBtn = document.querySelector('.focus-complete-btn');
+  if(completeBtn && !wasDone) {
+    completeBtn.style.display = 'none';
+    const popup = document.createElement('div');
+    popup.className = 'rpe-popup';
+    popup.id = 'rpePopup';
+    popup.innerHTML = `
+      <div class="rpe-popup-label">How hard was that set?</div>
+      <div class="rpe-popup-btns">
+        <button class="rpe-popup-btn rpe-easy-btn" onclick="clickFeedback(); confirmRpeAndAdvance('easy')">
+          <span class="rpe-emoji">🟢</span>Easy
+        </button>
+        <button class="rpe-popup-btn rpe-medium-btn" onclick="clickFeedback(); confirmRpeAndAdvance('medium')">
+          <span class="rpe-emoji">🟡</span>Medium
+        </button>
+        <button class="rpe-popup-btn rpe-hard-btn" onclick="clickFeedback(); confirmRpeAndAdvance('hard')">
+          <span class="rpe-emoji">🔴</span>Hard
+        </button>
+      </div>
+      <button class="rpe-skip-btn" onclick="clickFeedback(); confirmRpeAndAdvance('')">Skip</button>
+    `;
+    completeBtn.parentNode.insertBefore(popup, completeBtn.nextSibling);
+    startRestTimer();
+    return;
+  }
+
+  // Already done set (Save Set) or no button found — advance directly
   const next = wasDone ? findFirstPendingOverall() : findNextPendingSet(runner.exerciseIndex, runner.setIndex);
   if(next) {
     activeSession.runner = next;
     if(!wasDone) startRestTimer();
   }
+  renderActiveSession();
+}
+
+function confirmRpeAndAdvance(rpeValue) {
+  if(!activeSession) return;
+  const runner = normalizeRunner();
+  const ei = runner.exerciseIndex;
+  const si = runner.setIndex;
+  const set = activeSession.exercises[ei] && activeSession.exercises[ei].sets[si];
+  if(set && rpeValue) set.rpe = rpeValue;
   saveActiveSession();
+
+  const ex = activeSession.exercises[ei];
+  const next = findNextPendingSet(ei, si);
+  if(next) {
+    activeSession.runner = next;
+  }
   renderActiveSession();
 }
 
@@ -2647,7 +2704,22 @@ function renderFocusedActiveSession() {
   const setCount = ex.sets.length;
   const completedCount = ex.sets.filter(isSetDone).length;
   const allDone = !findFirstPendingOverall();
-  const completeLabel = isSetDone(set) ? 'Save Set' : 'Complete Set';
+  const exDone = isExerciseDone(ex);
+  const nextExIdx = activeSession.exercises.findIndex((item, idx) => idx > ei && !isExerciseDone(item));
+  let completeLabel, completeAction;
+  if (!isSetDone(set)) {
+    completeLabel = 'Complete Set';
+    completeAction = 'completeFocusedSet()';
+  } else if (exDone && allDone) {
+    completeLabel = 'Finish Session';
+    completeAction = 'finishSession()';
+  } else if (exDone && nextExIdx >= 0) {
+    completeLabel = 'Next Exercise →';
+    completeAction = `selectFocusedExercise(${nextExIdx})`;
+  } else {
+    completeLabel = 'Complete Set';
+    completeAction = 'completeFocusedSet()';
+  }
   const rtDisplay = rt.running ? formatTimer(rt.remaining) : formatTimer(rt.default);
 
   const exerciseTabs = activeSession.exercises.map((item, idx) => {
@@ -2724,7 +2796,7 @@ function renderFocusedActiveSession() {
           </button>
         </div>
 
-        <button class="btn focus-complete-btn" onclick="clickFeedback(); completeFocusedSet()">${completeLabel}</button>
+        <button class="btn focus-complete-btn" onclick="clickFeedback(); ${completeAction}">${completeLabel}</button>
       </div>
 
       <div class="focus-progress-head">
@@ -3035,8 +3107,7 @@ function updateRestTimerUI(){
   const fl=document.getElementById('floatingRestTimerLabel');
   if(ft)ft.textContent=formatTimer(rt.running?rt.remaining:rt.default);
   if(fl)fl.textContent='Rest';
-  f.classList.toggle('show',rt.running);
-  if(rt.running)f.classList.remove('done');
+  f.classList.remove('show','done');
 }
 function startRestTimer(){
   const rt=ensureRestTimer();
@@ -3072,7 +3143,7 @@ function finishRestTimer(){
   const fl=document.getElementById('floatingRestTimerLabel');
   if(ft)ft.textContent='0:00';
   if(fl)fl.textContent='Done';
-  f.classList.add('show','done');
+  f.classList.remove('show','done');
   const d=document.getElementById('restTimerDisplay'),b=document.getElementById('restTimerBtn');
   if(d){d.textContent=formatTimer(rt.default);d.classList.remove('running');}
   if(b)b.textContent='Rest';
