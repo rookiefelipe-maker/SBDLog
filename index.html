@@ -347,8 +347,8 @@ html,body{height:100%;background:var(--bg0);color:var(--text1);font-family:'DM S
 .plate-preview-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--text3);}
 .plate-preview-load{font-size:11px;color:var(--text2);font-variant-numeric:tabular-nums;white-space:nowrap;}
 .plate-bar{height:36px;display:flex;align-items:center;overflow:hidden;}
-.plate-sleeve{height:8px;width:34px;background:var(--bg5);border-radius:4px 0 0 4px;flex:0 0 auto;}
-.plate-collar{width:8px;height:24px;border-radius:3px;background:var(--text3);margin-right:4px;flex:0 0 auto;}
+.plate-sleeve{height:4px;width:22px;background:var(--bg5);border-radius:4px 0 0 4px;flex:0 0 auto;}
+.plate-collar{width:4px;height:10px;border-radius:3px;background:var(--text3);margin-right:4px;flex:0 0 auto;}
 .plate-stack{display:flex;align-items:center;gap:2px;min-width:0;}
 .plate-disc{width:12px;border-radius:3px;border:1px solid rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;font-size:0;color:transparent;box-shadow:inset 0 0 0 1px rgba(0,0,0,.22);flex:0 0 auto;}
 .plate-25{height:34px;background:#b71c1c;}
@@ -364,7 +364,7 @@ html,body{height:100%;background:var(--bg0);color:var(--text1);font-family:'DM S
 .week-right{flex-shrink:0;}
 .week-plate-mini{width:76px;min-width:76px;height:34px;display:flex;align-items:center;overflow:hidden;opacity:.95;margin-left:auto;}
 .week-plate-mini .plate-sleeve{width:22px;height:6px;}
-.week-plate-mini .plate-collar{width:6px;height:19px;margin-right:3px;}
+.week-plate-mini .plate-collar{width:4px;height:10px;margin-right:3px;}
 .week-plate-mini .plate-stack{gap:1px;}
 .week-plate-mini .plate-disc{width:8px;border-radius:2px;border-color:rgba(255,255,255,.16);}
 .week-plate-mini .plate-25{height:28px;}
@@ -378,7 +378,17 @@ html,body{height:100%;background:var(--bg0);color:var(--text1);font-family:'DM S
 .plate-chip{background:var(--bg3);border:1px solid var(--bg4);border-radius:8px;color:var(--text2);font-size:13px;font-weight:600;padding:9px 6px;text-align:center;cursor:pointer;user-select:none;}
 .plate-chip input{display:none;}
 .plate-chip:has(input:checked){background:rgba(204,34,34,.15);border-color:rgba(204,34,34,.5);color:var(--white);}
-@media (max-width:450px){.plate-preview{margin-left:0;padding:7px 9px;}.plate-preview-head{margin-bottom:5px;}.plate-bar{height:30px;}.plate-sleeve{width:28px;height:7px;}.plate-collar{height:21px;width:7px;}.plate-disc{width:10px;}.plate-25{height:30px}.plate-20{height:28px}.plate-15{height:26px}.plate-10{height:24px}.plate-5{height:21px}.plate-2-5{height:18px}.plate-1-25{height:15px}.week-plate-mini{width:66px;min-width:66px}.plate-settings-grid{grid-template-columns:repeat(3,1fr);}}
+
+/* CABLE STACK VISUALIZER — vertical plates like barbell but stacked top-down */
+.cable-vstack{display:flex;flex-direction:column;align-items:flex-start;gap:2px;}
+.cable-vplate{height:9px;width:60px;border-radius:3px;border:1px solid rgba(255,255,255,.18);box-shadow:inset 0 0 0 1px rgba(0,0,0,.2);flex:0 0 auto;}
+.cable-pin-plate{position:relative;}
+.cable-pin-plate::after{content:'▶';position:absolute;right:-14px;top:50%;transform:translateY(-50%);font-size:8px;color:#e63950;line-height:1;}
+.cable-pin-bar{width:60px;height:4px;background:linear-gradient(90deg,#e63950,#a01a28);border-radius:2px;box-shadow:0 0 5px rgba(204,34,34,.5);}
+/* reuse barbell plate colors for cable */
+.cable-p2-5{background:linear-gradient(180deg,#777,#3d3d3d);}
+
+@media (max-width:450px){.plate-preview{margin-left:0;padding:7px 9px;}.plate-preview-head{margin-bottom:5px;}.plate-bar{height:30px;}.plate-sleeve{width:28px;height:7px;}.plate-collar{height:10px;width:4px;}.plate-disc{width:10px;}.plate-25{height:30px}.plate-20{height:28px}.plate-15{height:26px}.plate-10{height:24px}.plate-5{height:21px}.plate-2-5{height:18px}.plate-1-25{height:15px}.week-plate-mini{width:66px;min-width:66px}.plate-settings-grid{grid-template-columns:repeat(3,1fr);}}
 
 /* SROW VERSION D: # is RPE indicator, X stays alone */
 .srow-d{display:grid;grid-template-columns:28px 1fr 1fr 46px 28px 22px;gap:6px;align-items:center;}
@@ -915,8 +925,8 @@ body:after{
 .focus-loader-title{font-size:14px;color:rgba(255,255,255,.54);}
 .focus-loader-load{font-size:14px;color:rgba(255,255,255,.58);white-space:nowrap;}
 .focus-loader .plate-bar{height:72px;}
-.focus-loader .plate-sleeve{width:118px;height:16px;border-radius:10px;}
-.focus-loader .plate-collar{width:14px;height:56px;border-radius:5px;margin-right:5px;}
+.focus-loader .plate-sleeve{width:118px;height:8px;border-radius:10px;}
+.focus-loader .plate-collar{width:4px;height:10px;border-radius:5px;margin-right:5px;}
 .focus-loader .plate-stack{gap:3px;}
 .focus-loader .plate-disc{width:14px;border-radius:4px;}
 .focus-loader .plate-25{height:64px;background:linear-gradient(180deg,#ff3045,#d71930);}
@@ -1018,7 +1028,7 @@ body:after{
   .focus-loader{padding:18px;}
   .focus-loader .plate-bar{height:66px;}
   .focus-loader .plate-sleeve{width:92px;height:15px;}
-  .focus-loader .plate-collar{width:16px;height:52px;}
+  .focus-loader .plate-collar{width:4px;height:10px;}
   .focus-loader .plate-disc{width:10px;}
   .focus-loader .plate-25{height:60px;}
   .focus-loader .plate-20{height:58px;}
@@ -2503,6 +2513,34 @@ function formatFocusedLoad(set) {
 
 function renderFocusPlateLoaderHtml(ei, si, weight='') {
   const ex = activeSession && activeSession.exercises[ei] ? activeSession.exercises[ei] : null;
+
+  // Cable / polea → cable stack in focus mode
+  if(ex && isCableExercise(ex.name)) {
+    const kg = parseFloat(weight);
+    const isValid = Number.isFinite(kg) && kg > 0;
+    if(!isValid) return `<div class="focus-loader"><div class="focus-loader-head"><div class="focus-loader-title">Cable Stack</div><div class="focus-loader-load"></div></div><div class="focus-loader-note">Ingresá el peso para ver los discos.</div></div>`;
+
+    const { plates, leftover } = getCablePlates(kg);
+    const note = leftover > 0.001 ? `No se puede cargar exacto con estos discos` : '';
+    const platesHtml = plates.map((p, i) => {
+      const isPin = i === plates.length - 1;
+      return `<div class="cable-vplate ${p.cls}${isPin ? ' cable-pin-plate' : ''}" style="height:14px;width:90px;border-radius:4px;" title="${p.w} kg"></div>`;
+    }).join('');
+
+    return `<div class="focus-loader">
+      <div class="focus-loader-head">
+        <div class="focus-loader-title">Cable Stack</div>
+        <div class="focus-loader-load">${kg} kg</div>
+      </div>
+      <div class="cable-vstack" style="align-items:center;gap:4px;padding:6px 0;">
+        ${platesHtml}
+        <div class="cable-pin-bar" style="width:90px;height:5px;border-radius:3px;"></div>
+      </div>
+      ${note ? `<div class="focus-loader-note">${note}</div>` : ''}
+    </div>`;
+  }
+
+  // Barbell → original bar loader
   const enabled = ex && shouldShowPlateVisualizer(ex.name);
   const calc = enabled ? getPlatesForWeight(weight) : {plates:[], side:0, exact:false, reason:''};
   const showBar = enabled && parseFloat(weight) >= PLATE_VISUALIZER.bar;
@@ -2885,7 +2923,7 @@ function renderFocusedActiveSession() {
         <div class="focus-session-name">${htmlSafe(activeSession.tplName)}</div>
         <div class="focus-session-date">${fmtDate(activeSession.date)}${activeSession.startTime ? ' • ' + formatTime(activeSession.startTime) : ''}</div>
       </div>
-      <button class="btn focus-finish-btn" onclick="clickFeedback(); finishSession()">Finish</button>
+      <button class="btn btn-ghost focus-finish-btn" onclick="clickFeedback(); cancelSession()" style="margin-right:-2px;">Cancel</button><button class="btn focus-finish-btn" onclick="clickFeedback(); finishSession()">Finish</button>
     </div>
 
     <div class="focus-ex-tabs">${exerciseTabs}</div>
@@ -2938,7 +2976,6 @@ function renderFocusedActiveSession() {
 
       <div class="focus-bottom-actions">
         <button class="btn-dashed" onclick="clickFeedback(); updateSession()">Save Routine</button>
-        <button class="btn btn-ghost" onclick="clickFeedback(); cancelSession()">Cancel</button>
       </div>
     </div>
   </div>`;
@@ -3041,8 +3078,8 @@ function renderActiveSession() {
     <div style="display:flex;gap:8px;margin-top:12px;">
       <button class="btn" style="flex:1;" onclick="clickFeedback(); updateSession()">Update</button>
       <button class="btn btn-ghost" style="flex:1;" onclick="clickFeedback(); finishSession()">Finish</button>
-    </div>
-    <button class="btn-danger" style="width:100%;margin-top:10px;" onclick="clickFeedback(); cancelSession()">Cancel session</button>`;
+      <button class="btn btn-ghost" style="flex:1;" onclick="clickFeedback(); cancelSession()">Cancel</button>
+    </div>`;
   content.innerHTML = html;
 }
 
@@ -3111,17 +3148,72 @@ function renderPlateSettings() {
   }).join('');
 }
 
+function isCableExercise(exName) {
+  if(!exName) return false;
+  const n = exName.toLowerCase().replace(/[–—]/g, '-');
+  return /\bcable\b|polea/.test(n);
+}
+
+// Cable plate sizes and colors (heaviest first, greedy decomposition)
+const CABLE_PLATE_TYPES = [
+  { w: 10,  cls: 'plate-10'   },
+  { w: 5,   cls: 'plate-5'    },
+  { w: 2.5, cls: 'cable-p2-5' },
+];
+
+function getCablePlates(kg) {
+  let remaining = Math.round(parseFloat(kg) * 100) / 100;
+  const plates = [];
+  CABLE_PLATE_TYPES.forEach(({w, cls}) => {
+    while(remaining + 0.001 >= w) {
+      plates.push({w, cls});
+      remaining = Math.round((remaining - w) * 100) / 100;
+    }
+  });
+  return { plates, leftover: remaining };
+}
+
+// Cable stack: shows individual plates that make up the weight, stacked
+// vertically with a pin at the bottom — appears only when weight is entered.
+function renderCableStackHtml(ei, si, weight='') {
+  const kg = parseFloat(weight);
+  const show = Number.isFinite(kg) && kg > 0;
+  if(!show) return `<div class="plate-preview" id="plate-preview-${ei}-${si}"></div>`;
+
+  const { plates, leftover } = getCablePlates(kg);
+  const note = leftover > 0.001 ? `No se puede cargar exacto con estos discos` : '';
+
+  // plates rendered top→bottom (heaviest last visually = bottom of stack)
+  const platesHtml = plates.map((p, i) => {
+    const isPin = i === plates.length - 1;
+    return `<div class="cable-vplate ${p.cls}${isPin ? ' cable-pin-plate' : ''}" title="${p.w} kg"></div>`;
+  }).join('');
+
+  return `<div class="plate-preview show" id="plate-preview-${ei}-${si}">
+    <div class="plate-preview-head">
+      <div class="plate-preview-title">Cable Stack</div>
+      <div class="plate-preview-load">${kg} kg</div>
+    </div>
+    <div class="cable-vstack">
+      ${platesHtml}
+      <div class="cable-pin-bar"></div>
+    </div>
+    ${note ? `<div class="plate-preview-note">${note}</div>` : ''}
+  </div>`;
+}
+
 function shouldShowPlateVisualizer(exName) {
   if(!exName) return false;
   const n = exName.toLowerCase().replace(/[–—]/g, '-');
 
   // Strict on purpose: basics and barbell variants only.
-  if(/dumbbell|db |machine|cable|leg press|curl|extension|fly|raise|pushdown|crunch|plank|smith|hack squat|belt squat/.test(n)) return false;
+  if(/dumbbell|db |cable|leg press|curl|extension|fly|raise|pushdown|crunch|plank|smith|hack squat|belt squat/.test(n)) return false;
 
   if(/squat|bench|deadlift/.test(n)) return true;
   if(/barbell row|pendlay row/.test(n)) return true;
   if(/overhead press|military press|strict press|\bohp\b/.test(n)) return true;
   if(/larsen press|larssen press|press larsen|press larssen/.test(n)) return true;
+  if(/\bmachine\b|m[aá]quina/.test(n)) return true;
 
   return false;
 }
@@ -3148,7 +3240,15 @@ function renderPlateStackHtml(plates) { return plates.map(p=>`<div class="plate-
 
 function renderPlatePreviewHtml(ei, si, weight='') {
   const ex = activeSession && activeSession.exercises[ei] ? activeSession.exercises[ei] : null;
-  const enabled = ex && shouldShowPlateVisualizer(ex.name);
+  if(!ex) return `<div class="plate-preview" id="plate-preview-${ei}-${si}"></div>`;
+
+  // Cable / polea → weight stack visualizer
+  if(isCableExercise(ex.name)) {
+    return renderCableStackHtml(ei, si, weight);
+  }
+
+  // Barbell → bar + plates visualizer
+  const enabled = shouldShowPlateVisualizer(ex.name);
   const calc = enabled ? getPlatesForWeight(weight) : {plates:[], side:0, exact:false, reason:''};
   const show = enabled && parseFloat(weight) >= PLATE_VISUALIZER.bar;
   return `<div class="plate-preview${show?' show':''}" id="plate-preview-${ei}-${si}">
