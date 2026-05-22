@@ -379,14 +379,12 @@ html,body{height:100%;background:var(--bg0);color:var(--text1);font-family:'DM S
 .plate-chip input{display:none;}
 .plate-chip:has(input:checked){background:rgba(204,34,34,.15);border-color:rgba(204,34,34,.5);color:var(--white);}
 
-/* CABLE STACK VISUALIZER — vertical plates like barbell but stacked top-down */
-.cable-vstack{display:flex;flex-direction:column;align-items:flex-start;gap:2px;}
-.cable-vplate{height:9px;width:60px;border-radius:3px;border:1px solid rgba(255,255,255,.18);box-shadow:inset 0 0 0 1px rgba(0,0,0,.2);flex:0 0 auto;}
-.cable-pin-plate{position:relative;}
-.cable-pin-plate::after{content:'▶';position:absolute;right:-14px;top:50%;transform:translateY(-50%);font-size:8px;color:#e63950;line-height:1;}
-.cable-pin-bar{width:60px;height:4px;background:linear-gradient(90deg,#e63950,#a01a28);border-radius:2px;box-shadow:0 0 5px rgba(204,34,34,.5);}
-/* reuse barbell plate colors for cable */
-.cable-p2-5{background:linear-gradient(180deg,#777,#3d3d3d);}
+/* CABLE STACK VISUALIZER */
+.cable-vstack{display:flex;flex-direction:column;align-items:stretch;gap:3px;width:160px;margin:0 auto;}
+.cable-vplate{height:20px;border-radius:4px;background:#222;border:1px solid #333;display:flex;align-items:center;justify-content:flex-end;padding-right:8px;padding-left:26px;flex:0 0 auto;position:relative;}
+.cable-vplate-label{font-size:11px;font-weight:700;color:#fff;font-family:'DM Sans',sans-serif;letter-spacing:.3px;line-height:1;white-space:nowrap;position:absolute;right:8px;z-index:2;}
+.cable-pin-plate{border-color:#333;background:#222;}
+.cable-pin-plate::before{content:'';position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:8px;height:8px;border-radius:50%;background:#f5c400;box-shadow:0 0 6px rgba(245,196,0,.8);z-index:1;}
 
 @media (max-width:450px){.plate-preview{margin-left:0;padding:7px 9px;}.plate-preview-head{margin-bottom:5px;}.plate-bar{height:30px;}.plate-sleeve{width:28px;height:7px;}.plate-collar{height:10px;width:4px;}.plate-disc{width:10px;}.plate-25{height:30px}.plate-20{height:28px}.plate-15{height:26px}.plate-10{height:24px}.plate-5{height:21px}.plate-2-5{height:18px}.plate-1-25{height:15px}.week-plate-mini{width:66px;min-width:66px}.plate-settings-grid{grid-template-columns:repeat(3,1fr);}}
 
@@ -2524,7 +2522,7 @@ function renderFocusPlateLoaderHtml(ei, si, weight='') {
     const note = leftover > 0.001 ? `No se puede cargar exacto con estos discos` : '';
     const platesHtml = plates.map((p, i) => {
       const isPin = i === plates.length - 1;
-      return `<div class="cable-vplate ${p.cls}${isPin ? ' cable-pin-plate' : ''}" style="height:14px;width:90px;border-radius:4px;" title="${p.w} kg"></div>`;
+      return `<div class="cable-vplate ${p.cls}${isPin ? ' cable-pin-plate' : ''}" style="height:18px;width:90px;border-radius:4px;padding-left:22px;" title="${p.w} kg"><span class="cable-vplate-label">${p.w}kg</span></div>`;
     }).join('');
 
     return `<div class="focus-loader">
@@ -2540,15 +2538,18 @@ function renderFocusPlateLoaderHtml(ei, si, weight='') {
     </div>`;
   }
 
-  // Barbell → original bar loader
-  const enabled = ex && shouldShowPlateVisualizer(ex.name);
-  const calc = enabled ? getPlatesForWeight(weight) : {plates:[], side:0, exact:false, reason:''};
-  const showBar = enabled && parseFloat(weight) >= PLATE_VISUALIZER.bar;
+  // Barbell or Machine → bar / machine loader
+  const machine = ex && isMachineExercise(ex.name);
+  const enabled = ex && (shouldShowPlateVisualizer(ex.name) || machine);
+  const calc = enabled ? getPlatesForWeight(weight, machine) : {plates:[], side:0, exact:false, reason:''};
+  const showBar = enabled && parseFloat(weight) > 0 && (machine || parseFloat(weight) >= PLATE_VISUALIZER.bar);
   const stack = showBar ? renderPlateStackHtml(calc.plates) : '';
+  const loadLabel = showBar ? (machine ? `${formatPlate(calc.side)}kg total` : `${formatPlate(calc.side)}kg / side`) : '';
+  const loaderTitle = machine ? 'Machine Loader' : (enabled ? 'Interactive Bar Loader' : 'Set Focus');
   return `<div class="focus-loader">
     <div class="focus-loader-head">
-      <div class="focus-loader-title">${enabled ? 'Interactive Bar Loader' : 'Set Focus'}</div>
-      <div class="focus-loader-load">${showBar ? `${formatPlate(calc.side)}kg / side` : ''}</div>
+      <div class="focus-loader-title">${loaderTitle}</div>
+      <div class="focus-loader-load">${loadLabel}</div>
     </div>
     ${enabled ? `<div class="plate-bar">
       <div class="plate-sleeve"></div><div class="plate-collar"></div>
@@ -3154,49 +3155,73 @@ function isCableExercise(exName) {
   return /\bcable\b|polea/.test(n);
 }
 
-// Cable plate sizes and colors (heaviest first, greedy decomposition)
-const CABLE_PLATE_TYPES = [
-  { w: 10,  cls: 'plate-10'   },
-  { w: 5,   cls: 'plate-5'    },
-  { w: 2.5, cls: 'cable-p2-5' },
-];
-
-function getCablePlates(kg) {
-  let remaining = Math.round(parseFloat(kg) * 100) / 100;
-  const plates = [];
-  CABLE_PLATE_TYPES.forEach(({w, cls}) => {
-    while(remaining + 0.001 >= w) {
-      plates.push({w, cls});
-      remaining = Math.round((remaining - w) * 100) / 100;
-    }
-  });
-  return { plates, leftover: remaining };
+function isMachineExercise(exName) {
+  if(!exName) return false;
+  const n = exName.toLowerCase().replace(/[–—]/g, '-');
+  return /\bmachine\b|maquina|máquina/.test(n);
 }
 
-// Cable stack: shows individual plates that make up the weight, stacked
-// vertically with a pin at the bottom — appears only when weight is entered.
+// Real cable machine stack — lightest (top) to heaviest (bottom)
+const CABLE_STACK = [
+  { w: 1.1  },
+  { w: 3.4  },
+  { w: 5.7  },
+  { w: 7.9  },
+  { w: 10.2 },
+  { w: 12.5 },
+  { w: 14.7 },
+  { w: 17.0 },
+  { w: 19.3 },
+  { w: 21.5 },
+  { w: 23.8 },
+  { w: 26.1 },
+  { w: 28.4 },
+  { w: 30.6 },
+  { w: 32.9 },
+];
+
+// Returns all plates from top of stack down to the one matching kg.
+// Finds closest plate; pin goes on that plate and all above are shown.
+function getCablePlates(kg) {
+  const target = Math.round(parseFloat(kg) * 10) / 10;
+  // Find index of closest plate weight
+  let pinIdx = 0;
+  let minDiff = Infinity;
+  CABLE_STACK.forEach((p, i) => {
+    const diff = Math.abs(p.w - target);
+    if(diff < minDiff) { minDiff = diff; pinIdx = i; }
+  });
+  const plates = CABLE_STACK.slice(0, pinIdx + 1).map((p, i) => ({
+    w: p.w,
+    cls: 'cable-p2-5',
+    isPin: i === pinIdx,
+  }));
+  const exact = minDiff < 0.15;
+  return { plates, leftover: exact ? 0 : minDiff };
+}
+
+// Cable stack: shows plates from top down to selected weight, with label and yellow dot pin.
 function renderCableStackHtml(ei, si, weight='') {
   const kg = parseFloat(weight);
   const show = Number.isFinite(kg) && kg > 0;
   if(!show) return `<div class="plate-preview" id="plate-preview-${ei}-${si}"></div>`;
 
   const { plates, leftover } = getCablePlates(kg);
-  const note = leftover > 0.001 ? `No se puede cargar exacto con estos discos` : '';
+  const note = leftover > 0.15 ? `Peso más cercano: ${plates[plates.length-1]?.w ?? '—'} kg` : '';
 
-  // plates rendered top→bottom (heaviest last visually = bottom of stack)
-  const platesHtml = plates.map((p, i) => {
-    const isPin = i === plates.length - 1;
-    return `<div class="cable-vplate ${p.cls}${isPin ? ' cable-pin-plate' : ''}" title="${p.w} kg"></div>`;
+  const platesHtml = plates.map((p) => {
+    return `<div class="cable-vplate${p.isPin ? ' cable-pin-plate' : ''}" title="${p.w} kg">
+      <span class="cable-vplate-label">${p.w}kg</span>
+    </div>`;
   }).join('');
 
   return `<div class="plate-preview show" id="plate-preview-${ei}-${si}">
     <div class="plate-preview-head">
       <div class="plate-preview-title">Cable Stack</div>
-      <div class="plate-preview-load">${kg} kg</div>
+      <div class="plate-preview-load">${plates[plates.length-1]?.w ?? kg} kg</div>
     </div>
     <div class="cable-vstack">
       ${platesHtml}
-      <div class="cable-pin-bar"></div>
     </div>
     ${note ? `<div class="plate-preview-note">${note}</div>` : ''}
   </div>`;
@@ -3218,8 +3243,21 @@ function shouldShowPlateVisualizer(exName) {
   return false;
 }
 
-function getPlatesForWeight(totalWeight) {
+function getPlatesForWeight(totalWeight, machine=false) {
   const total = parseFloat(totalWeight);
+  if(machine) {
+    // Machine: distribute total weight directly (no bar, no divide by 2)
+    if(!Number.isFinite(total) || total <= 0) return {plates:[], side:0, exact:false, reason:'', machine:true};
+    let remaining = Math.round(total * 100) / 100;
+    const plates = [];
+    getPlateSettings().forEach(plate => {
+      while(remaining + 0.001 >= plate) {
+        plates.push(plate);
+        remaining = Math.round((remaining - plate) * 100) / 100;
+      }
+    });
+    return {plates, side:total, exact:remaining < 0.001, reason:remaining < 0.001 ? '' : `Cannot load ${formatPlate(total)} kg with selected plates`, machine:true};
+  }
   if(!Number.isFinite(total) || total < PLATE_VISUALIZER.bar) return {plates:[], side:0, exact:false, reason:'Minimum: 20 kg bar'};
   let side = (total - PLATE_VISUALIZER.bar) / 2;
   if(side < 0) return {plates:[], side:0, exact:false, reason:'Below bar weight'};
@@ -3247,14 +3285,17 @@ function renderPlatePreviewHtml(ei, si, weight='') {
     return renderCableStackHtml(ei, si, weight);
   }
 
-  // Barbell → bar + plates visualizer
-  const enabled = shouldShowPlateVisualizer(ex.name);
-  const calc = enabled ? getPlatesForWeight(weight) : {plates:[], side:0, exact:false, reason:''};
-  const show = enabled && parseFloat(weight) >= PLATE_VISUALIZER.bar;
+  // Barbell or Machine → bar + plates visualizer
+  const machine = isMachineExercise(ex.name);
+  const enabled = shouldShowPlateVisualizer(ex.name) || machine;
+  const calc = enabled ? getPlatesForWeight(weight, machine) : {plates:[], side:0, exact:false, reason:''};
+  const show = enabled && parseFloat(weight) > 0 && (machine || parseFloat(weight) >= PLATE_VISUALIZER.bar);
+  const loadLabel = show ? (machine ? `${formatPlate(calc.side)} kg total` : `${formatPlate(calc.side)} kg / side`) : '';
+  const title = machine ? 'Machine loader' : 'Bar loader';
   return `<div class="plate-preview${show?' show':''}" id="plate-preview-${ei}-${si}">
     <div class="plate-preview-head">
-      <div class="plate-preview-title">Bar loader</div>
-      <div class="plate-preview-load">${show ? `${formatPlate(calc.side)} kg / side` : ''}</div>
+      <div class="plate-preview-title">${title}</div>
+      <div class="plate-preview-load">${loadLabel}</div>
     </div>
     <div class="plate-bar">
       <div class="plate-sleeve"></div><div class="plate-collar"></div>
