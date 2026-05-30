@@ -1289,9 +1289,12 @@ if ('serviceWorker' in navigator) {
 <div class="moverlay" id="mEditSess">
   <div class="modal" style="max-height:85vh;overflow-y:auto;">
     <div class="mhandle"></div>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-      <div class="mtitle" style="margin-bottom:0;" id="editSessTitle">Edit Session</div>
-      <div style="font-size:12px;color:var(--text3);" id="editSessDate"></div>
+    <div style="margin-bottom:16px;">
+      <div class="mtitle" style="margin-bottom:12px;" id="editSessTitle">Edit Session</div>
+      <div class="fg">
+        <div class="flabel">Date</div>
+        <input type="date" class="finp" id="editSessDateInp">
+      </div>
     </div>
     <div id="editSessBody"></div>
     <div class="mactions" style="margin-top:16px;">
@@ -3963,7 +3966,7 @@ function openEditSess(id) {
   if(!s) return;
   editingSessId = id;
   document.getElementById('editSessTitle').textContent = s.tplName || 'Session';
-  document.getElementById('editSessDate').textContent = fmtDate(s.date);
+  document.getElementById('editSessDateInp').value = s.date || todayISO();
   const body = document.getElementById('editSessBody');
   const knownNames = [...new Set(sessions.flatMap(sess => (sess.exercises || []).map(ex => ex.name).filter(Boolean)))].sort((a,b)=>a.localeCompare(b));
   const listId = `hist-exercise-names-${id}`;
@@ -4031,6 +4034,8 @@ function saveEditSess() {
   const sIdx = sessions.findIndex(x => x.id === editingSessId);
   if(sIdx === -1) return;
   const s = JSON.parse(JSON.stringify(sessions[sIdx]));
+  const newDate = document.getElementById('editSessDateInp').value;
+  if (newDate) s.date = newDate;
   // Read all exercises from modal
   document.querySelectorAll('#editSessBody .esex').forEach((exEl, ei) => {
     const rows = exEl.querySelectorAll('.eset-row');
