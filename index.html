@@ -1140,6 +1140,7 @@ if ('serviceWorker' in navigator) {
       </div>
       <!-- HISTORY -->
       <div class="subview active" id="sv-hist">
+        <button class="btn-dashed" onclick="clickFeedback(); openAddManualSess()" style="margin-bottom:4px;">+ Add manual session</button>
         <div id="histList"></div>
       </div>
       <!-- STATS -->
@@ -1409,15 +1410,124 @@ if ('serviceWorker' in navigator) {
   </div>
 </div>
 
+<!-- MODAL: Add manual session — Step 1: pick routine -->
+<div class="moverlay" id="mAddManualSess">
+  <div class="modal" style="max-height:88vh;overflow-y:auto;">
+    <div class="mhandle"></div>
+    <div class="mtitle">Add session</div>
+    <div class="flabel" style="margin-bottom:10px;">Choose a routine</div>
+    <div id="manSessRoutineList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;"></div>
+    <button class="btn-dashed" onclick="clickFeedback(); openManualSessBlank()">+ Blank session (no routine)</button>
+    <div class="mactions">
+      <button class="btn btn-ghost btn-sm" onclick="clickFeedback(); closeModal('mAddManualSess')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Add manual session — Step 2: fill weights -->
+<div class="moverlay" id="mFillManualSess">
+  <div class="modal" style="max-height:88vh;overflow-y:auto;">
+    <div class="mhandle"></div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;gap:10px;">
+      <div class="mtitle" style="margin-bottom:0;" id="manFillTitle">Session</div>
+      <button class="btn btn-ghost btn-sm" style="width:auto;padding:8px 12px;" onclick="clickFeedback(); closeModal('mFillManualSess'); openModal('mAddManualSess')">← Back</button>
+    </div>
+    <div class="fg">
+      <div class="flabel">Date</div>
+      <input type="date" class="finp" id="manSessDate">
+    </div>
+    <div class="flabel" style="margin-bottom:8px;">Exercises</div>
+    <div id="manSessExList"></div>
+    <button class="btn-dashed" style="margin-bottom:14px;" onclick="clickFeedback(); addManualSessEx()">+ Add exercise</button>
+    <div class="mactions">
+      <button class="btn btn-ghost btn-sm" style="flex:1" onclick="clickFeedback(); closeModal('mFillManualSess')">Cancel</button>
+      <button class="btn btn-sm" style="flex:2" onclick="clickFeedback(); saveManualSess()">Save session</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ── BUILT-IN EXERCISES ────────────────────────────────────────
 const BUILTIN = ['Bench Press','Incline Bench Press','Decline Bench Press','Dumbbell Bench Press','Chest Fly','Cable Fly','Push-Up','Overhead Press','Dumbbell Shoulder Press','Lateral Raise','Front Raise','Rear Delt Fly','Arnold Press','Tricep Dip','Tricep Pushdown','Skull Crusher','Close-Grip Bench Press','Bicep Curl','Hammer Curl','Preacher Curl','Concentration Curl','Barbell Row','Dumbbell Row','Seated Cable Row','Lat Pulldown','Pull-Up','Chin-Up','Deadlift','Romanian Deadlift','Squat','Front Squat','Leg Press','Lunges','Bulgarian Split Squat','Leg Extension','Leg Curl','Hip Thrust','Glute Bridge','Calf Raise','Seated Calf Raise','Ab Crunch','Hanging Leg Raise','Russian Twist','Plank','Cable Crunch','Face Pull','Shrugs',"Farmer's Walk",'Smith Machine Squat','Machine Chest Press'];
 
-// ── STORAGE ──────────────────────────────────────────────────
+// ── STORAGE — IndexedDB with localStorage fallback ────────────
 const LS = {
-  get: k => JSON.parse(localStorage.getItem(k) || 'null'),
-  set: (k,v) => localStorage.setItem(k, JSON.stringify(v)),
+  get: k => { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch(e) { return null; } },
+  set: (k,v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch(e) {} },
 };
+
+// IndexedDB wrapper — all app writes go through IDB first, then mirror to LS
+const IDB = (() => {
+  const DB_NAME = 'sbdlog', STORE = 'kv', DB_VER = 1;
+  let _db = null;
+
+  function open() {
+    if (_db) return Promise.resolve(_db);
+    return new Promise((res, rej) => {
+      const req = indexedDB.open(DB_NAME, DB_VER);
+      req.onupgradeneeded = e => e.target.result.createObjectStore(STORE);
+      req.onsuccess = e => { _db = e.target.result; res(_db); };
+      req.onerror = () => rej(req.error);
+    });
+  }
+
+  async function get(k) {
+    try {
+      const db = await open();
+      return new Promise((res, rej) => {
+        const tx = db.transaction(STORE, 'readonly');
+        const req = tx.objectStore(STORE).get(k);
+        req.onsuccess = () => res(req.result !== undefined ? req.result : null);
+        req.onerror = () => rej(req.error);
+      });
+    } catch(e) { return LS.get(k); }
+  }
+
+  async function set(k, v) {
+    LS.set(k, v); // always mirror to LS as backup
+    try {
+      const db = await open();
+      return new Promise((res, rej) => {
+        const tx = db.transaction(STORE, 'readwrite');
+        tx.objectStore(STORE).put(v, k);
+        tx.oncomplete = () => res();
+        tx.onerror = () => rej(tx.error);
+      });
+    } catch(e) {}
+  }
+
+  // Migrate existing localStorage data to IDB on first load
+  async function migrateFromLS() {
+    const keys = ['mx_1rm','mx_tpl','mx_sess','mx_ex','mx_goals','mx_goals_v2',
+                  'mx_blocks','mx_active_block','mx_active_sess','mx_draft_sess',
+                  'mx_plate_settings','mx_backup_folder'];
+    for (const k of keys) {
+      const lsVal = LS.get(k);
+      if (lsVal !== null) {
+        const idbVal = await get(k);
+        if (idbVal === null) await set(k, lsVal);
+      }
+    }
+  }
+
+  return { get, set, migrateFromLS };
+})();
+
+// Synchronous getData still reads from LS (always mirrored), async version reads IDB
+async function getDataAsync() {
+  const [oneRMs, templates, sessions, customEx] = await Promise.all([
+    IDB.get('mx_1rm'), IDB.get('mx_tpl'), IDB.get('mx_sess'), IDB.get('mx_ex')
+  ]);
+  return {
+    oneRMs: oneRMs || {sq:null,bp:null,dl:null},
+    templates: templates || [],
+    sessions: sessions || [],
+    customEx: customEx || [],
+  };
+}
+
+// Run migration silently on startup
+IDB.migrateFromLS().catch(() => {});
 
 function getData() {
   return {
@@ -1427,10 +1537,10 @@ function getData() {
     customEx: LS.get('mx_ex') || [],
   };
 }
-function save1RMData(d) { LS.set('mx_1rm', d); }
-function saveTplData(d) { LS.set('mx_tpl', d); }
-function saveSessData(d) { LS.set('mx_sess', d); }
-function saveExData(d) { LS.set('mx_ex', d); }
+function save1RMData(d) { LS.set('mx_1rm', d); IDB.set('mx_1rm', d); }
+function saveTplData(d) { LS.set('mx_tpl', d); IDB.set('mx_tpl', d); }
+function saveSessData(d) { LS.set('mx_sess', d); IDB.set('mx_sess', d); }
+function saveExData(d) { LS.set('mx_ex', d); IDB.set('mx_ex', d); }
 
 function getAllExercises() {
   const {customEx} = getData();
@@ -2277,6 +2387,7 @@ function saveActiveSession() {
     }))
   };
   LS.set(ACTIVE_SESS_KEY, snap);
+  IDB.set(ACTIVE_SESS_KEY, snap);
 }
 
 function loadActiveSession() {
@@ -2285,6 +2396,7 @@ function loadActiveSession() {
 
 function clearActiveSession() {
   localStorage.removeItem(ACTIVE_SESS_KEY);
+  IDB.set(ACTIVE_SESS_KEY, null);
 }
 
 function renderTrain() {
@@ -3609,6 +3721,7 @@ function finishSession() {
   const newBasicPRs = getBasicWeightPRsForSession(newSession, priorSessions);
   sessions.push(newSession);
   saveSessData(sessions);
+  autoBackup(); // 💾 auto-download backup after every session
   
   // Clear draft session
   let drafts = LS.get('mx_draft_sess') || {};
@@ -3803,7 +3916,7 @@ function renderHist() {
     card.innerHTML = `
       <div class="hist-hdr" onclick="clickFeedback(); this.closest('.hist-card').classList.toggle('open')">
         <div>
-          <div class="hist-tag">${s.tplName||'Session'}</div>
+          <div class="hist-tag">${s.tplName||'Session'}${s.manual ? ' <span style="font-size:11px;font-family:\'DM Sans\',sans-serif;font-weight:700;letter-spacing:1px;color:#3a7bd5;background:rgba(58,123,213,0.12);border:1px solid rgba(58,123,213,0.3);border-radius:5px;padding:2px 6px;vertical-align:middle;">MANUAL</span>' : ''}</div>
           <div class="hist-date">${fmtDate(s.date)}${timeStr}</div>
         </div>
         <div class="hist-right">
@@ -4623,7 +4736,8 @@ function resetData() {
     inp.style.borderColor = '#cc4444';
     return;
   }
-  ['mx_1rm','mx_tpl','mx_sess','mx_ex','mx_goals'].forEach(k => localStorage.removeItem(k));
+  const resetKeys = ['mx_1rm','mx_tpl','mx_sess','mx_ex','mx_goals','mx_goals_v2','mx_active_sess','mx_draft_sess'];
+  resetKeys.forEach(k => { localStorage.removeItem(k); IDB.set(k, null); });
   closeModal('mSettings');
   inp.value = '';
   renderAll();
@@ -5066,6 +5180,169 @@ function createConfetti() {
 }
 
 // ── TRAINING BLOCKS ───────────────────────────────────────────
+// ── MANUAL SESSION ────────────────────────────────────────────
+let manSessExCount = 0;
+let manSessRoutineName = '';
+
+function openAddManualSess() {
+  // Populate routine picker
+  const { templates } = getData();
+  const list = document.getElementById('manSessRoutineList');
+  if (!templates.length) {
+    list.innerHTML = '<div style="font-size:13px;color:var(--text3);padding:4px 0;">No routines saved — use blank session.</div>';
+  } else {
+    list.innerHTML = templates.map(t => {
+      const exNames = t.exercises.slice(0,3).map(e => typeof e === 'object' ? e.name : e).join(', ');
+      const more = t.exercises.length > 3 ? ` +${t.exercises.length - 3} more` : '';
+      return `<div class="tpick" style="padding:14px 16px;cursor:pointer;" onclick="clickFeedback(); openManualSessFromTemplate('${t.id}')">
+        <div class="tpick-name">${t.name}</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:4px;">${exNames}${more}</div>
+      </div>`;
+    }).join('');
+  }
+  openModal('mAddManualSess');
+}
+
+function openManualSessFromTemplate(tplId) {
+  const { templates } = getData();
+  const t = templates.find(x => x.id === tplId);
+  if (!t) return;
+  manSessRoutineName = t.name;
+  closeModal('mAddManualSess');
+  // Build exercise list from template
+  manSessExCount = 0;
+  document.getElementById('manSessDate').value = todayISO();
+  document.getElementById('manFillTitle').textContent = t.name;
+  const list = document.getElementById('manSessExList');
+  list.innerHTML = '';
+  t.exercises.forEach(e => {
+    const name = typeof e === 'object' ? e.name : e;
+    const sets = typeof e === 'object' && e.defaultSets ? e.defaultSets : 3;
+    const reps = typeof e === 'object' && e.defaultReps ? e.defaultReps : 8;
+    addManualSessEx(name, sets, reps);
+  });
+  openModal('mFillManualSess');
+}
+
+function openManualSessBlank() {
+  manSessRoutineName = 'Manual session';
+  closeModal('mAddManualSess');
+  manSessExCount = 0;
+  document.getElementById('manSessDate').value = todayISO();
+  document.getElementById('manFillTitle').textContent = 'Blank session';
+  const list = document.getElementById('manSessExList');
+  list.innerHTML = '';
+  addManualSessEx('', 3, 8);
+  openModal('mFillManualSess');
+}
+
+function addManualSessEx(name='', defaultSets=3, defaultReps=8) {
+  const id = ++manSessExCount;
+  const allEx = getAllExercises();
+  const datalistId = 'manSessExNames';
+  if (!document.getElementById(datalistId)) {
+    const dl = document.createElement('datalist');
+    dl.id = datalistId;
+    dl.innerHTML = allEx.map(n => `<option value="${n}"></option>`).join('');
+    document.body.appendChild(dl);
+  }
+  const div = document.createElement('div');
+  div.className = 'ex-editor';
+  div.dataset.manexid = id;
+  div.innerHTML = `
+    <div class="ex-editor-hdr" style="margin-bottom:8px;">
+      <input type="text" class="finp man-ex-name" placeholder="Exercise name" list="${datalistId}" autocomplete="off" value="${name}" style="flex:1;font-size:14px;padding:10px 12px;">
+      <button class="icon-btn" style="margin-left:8px;" onclick="clickFeedback(); this.closest('[data-manexid]').remove()">✕</button>
+    </div>
+    <div style="display:grid;grid-template-columns:22px 1fr 1fr 22px;gap:6px;padding:0 0 4px;margin-bottom:2px;">
+      <div style="font-size:10px;color:var(--text3);text-align:center;">#</div>
+      <div style="font-size:10px;color:var(--text3);text-align:center;text-transform:uppercase;letter-spacing:.5px;">KG</div>
+      <div style="font-size:10px;color:var(--text3);text-align:center;text-transform:uppercase;letter-spacing:.5px;">Reps</div>
+      <div></div>
+    </div>
+    <div id="manSets_${id}"></div>
+    <button class="btn-dashed" style="margin-top:6px;font-size:12px;padding:8px;" onclick="clickFeedback(); addManualSet(${id})">+ set</button>`;
+  document.getElementById('manSessExList').appendChild(div);
+  for (let i = 0; i < defaultSets; i++) addManualSet(id, defaultReps);
+}
+
+function addManualSet(exId, defaultReps='') {
+  const container = document.getElementById(`manSets_${exId}`);
+  if (!container) return;
+  const si = container.querySelectorAll('.man-set-row').length;
+  // copy last row's weight as default
+  const lastRows = container.querySelectorAll('.man-set-row');
+  const lastW = lastRows.length ? lastRows[lastRows.length-1].querySelector('.man-w').value : '';
+  const row = document.createElement('div');
+  row.className = 'man-set-row';
+  row.style.cssText = 'display:grid;grid-template-columns:22px 1fr 1fr 22px;gap:6px;align-items:center;margin-bottom:4px;';
+  row.innerHTML = `
+    <div class="sn" style="font-size:12px;color:var(--text3);text-align:center;">${si+1}</div>
+    <input type="number" class="sinp man-w" placeholder="kg" inputmode="decimal" step="0.5" value="${lastW}">
+    <input type="number" class="sinp man-r" placeholder="reps" inputmode="numeric" value="${defaultReps||''}">
+    <button class="sdel" onclick="clickFeedback(); this.closest('.man-set-row').remove(); renumberManSets(${exId})">✕</button>`;
+  container.appendChild(row);
+}
+
+function renumberManSets(exId) {
+  const rows = document.querySelectorAll(`#manSets_${exId} .man-set-row`);
+  rows.forEach((r, i) => { const sn = r.querySelector('.sn'); if(sn) sn.textContent = i+1; });
+}
+
+function saveManualSess() {
+  const date = document.getElementById('manSessDate').value || todayISO();
+  const exercises = [];
+  document.querySelectorAll('#manSessExList [data-manexid]').forEach(exEl => {
+    const exName = exEl.querySelector('.man-ex-name').value.trim();
+    if (!exName) return;
+    const sets = [];
+    exEl.querySelectorAll('.man-set-row').forEach(row => {
+      const w = row.querySelector('.man-w').value.trim();
+      const r = row.querySelector('.man-r').value.trim();
+      if (w || r) sets.push({ weight: w, reps: r, rpe: '', done: true });
+    });
+    if (sets.length) exercises.push({ name: exName, topSet: false, sets });
+  });
+  if (!exercises.length) {
+    alert('Add at least one exercise with sets.');
+    return;
+  }
+  const newSession = {
+    id: Date.now().toString(),
+    date,
+    tplId: null,
+    tplName: manSessRoutineName || 'Manual session',
+    startTime: null,
+    endTime: null,
+    exercises,
+    manual: true,
+  };
+  let { sessions } = getData();
+  sessions.push(newSession);
+  saveSessData(sessions);
+  autoBackup();
+  closeModal('mFillManualSess');
+  renderHist();
+  renderDash();
+}
+
+// ── AUTO-BACKUP ───────────────────────────────────────────────
+function autoBackup() {
+  try {
+    const data = getData();
+    const json = JSON.stringify(data, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `sbdlog-backup-${todayISO()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } catch(e) {}
+}
+
 function getBlocks() { return LS.get('mx_blocks') || []; }
 function saveBlocks(b) { LS.set('mx_blocks', b); }
 function getActiveBlock() { return LS.get('mx_active_block') || null; }
