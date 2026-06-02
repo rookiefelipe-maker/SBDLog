@@ -1517,17 +1517,7 @@ const IDB = (() => {
 })();
 
 // Synchronous getData still reads from LS (always mirrored), async version reads IDB
-async function getDataAsync() {
-  const [oneRMs, templates, sessions, customEx] = await Promise.all([
-    IDB.get('mx_1rm'), IDB.get('mx_tpl'), IDB.get('mx_sess'), IDB.get('mx_ex')
-  ]);
-  return {
-    oneRMs: oneRMs || {sq:null,bp:null,dl:null},
-    templates: templates || [],
-    sessions: sessions || [],
-    customEx: customEx || [],
-  };
-}
+
 
 // Run migration silently on startup
 IDB.migrateFromLS().catch(() => {});
@@ -1718,10 +1708,38 @@ function renderView(v) {
 function renderDashProgWeek() {
   const el = document.getElementById('dashProgWeek');
   if(!el) return;
+  // If no data at all, show nothing
+  const {sessions, oneRMs} = getData();
+  const hasAnyData = (sessions && sessions.length > 0) || Object.values(oneRMs||{}).some(v=>v);
+  if(!hasAnyData) { el.innerHTML = ''; return; }
   const pw = getCurrentProgWeek();
   if(!pw) { el.innerHTML = '<div style="font-size:13px;color:var(--text3);padding:4px 0;">Program starts May 11</div>'; return; }
   const phaseClass = pw.phase==='deload'?'deload':pw.phase==='test'?'test':'';
   const pct = getProgramProgressPct();
+
+  // Read actual best sets from session history
+  const lifts = [
+    { key: 'Squat',      label: 'Squat',  plan: pw.sq,  planPct: pw.sq_pct },
+    { key: 'Bench Press',label: 'Bench',  plan: pw.bp,  planPct: pw.bp_pct },
+    { key: 'Deadlift',   label: 'DL',     plan: pw.dl,  planPct: pw.dl_pct },
+  ];
+
+  const liftCells = lifts.map(l => {
+    const best = getTopSetForLift(l.key, sessions);
+    const hasReal = best && best.w > 0;
+    const dispWeight = hasReal ? best.w : l.plan;
+    const dispSub = hasReal
+      ? `${best.r} rep${best.r!==1?'s':''} · plan ${l.plan}kg`
+      : `plan · ${l.planPct}%`;
+    const accentColor = hasReal ? 'var(--accent)' : 'var(--white)';
+    return `
+      <div style="background:var(--bg3);border-radius:var(--rs);padding:8px 10px;">
+        <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;">${l.label}</div>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:${accentColor};line-height:1;">${dispWeight}kg</div>
+        <div style="font-size:10px;color:var(--text3);">${dispSub}</div>
+      </div>`;
+  }).join('');
+
   el.innerHTML = `
     <div class="card" style="padding:14px 16px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
@@ -1736,21 +1754,7 @@ function renderDashProgWeek() {
         <div class="prog-bar-track"><div class="prog-bar-fill" style="width:${pct}%"></div></div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;">
-        <div style="background:var(--bg3);border-radius:var(--rs);padding:8px 10px;">
-          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;">Squat</div>
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--white);line-height:1;">${pw.sq}kg</div>
-          <div style="font-size:10px;color:var(--text3);">${pw.sq_pct}% · bo ${pw.sq_bo}</div>
-        </div>
-        <div style="background:var(--bg3);border-radius:var(--rs);padding:8px 10px;">
-          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;">Bench</div>
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--white);line-height:1;">${pw.bp}kg</div>
-          <div style="font-size:10px;color:var(--text3);">${pw.bp_pct}% · bo ${pw.bp_bo}</div>
-        </div>
-        <div style="background:var(--bg3);border-radius:var(--rs);padding:8px 10px;">
-          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;">DL</div>
-          <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--white);line-height:1;">${pw.dl}kg</div>
-          <div style="font-size:10px;color:var(--text3);">${pw.dl_pct}% · bo ${pw.dl_bo}</div>
-        </div>
+        ${liftCells}
       </div>
     </div>`;
 }
@@ -2074,37 +2078,11 @@ function getFilteredExerciseNames() {
   }).sort((a,b) => a.name.localeCompare(b.name)).map(e => e.name);
 }
 
-function populateTplCategory() {
-  const sel = document.getElementById('mTplCategory');
-  if(!sel) return;
-  const cats = new Set(['all']);
-  getAllExerciseInfos().forEach(ex => {
-    if(ex.cat) cats.add(ex.cat);
-  });
-  sel.innerHTML = '<option value="all">All groups</option>' + [...cats].filter(c=>c!=='all').sort().map(c=>`<option value="${c}">${c}</option>`).join('');
-}
 
-function filterTplExercises() {
-  const names = getFilteredExerciseNames();
-  document.querySelectorAll('.tpl-ex-sel').forEach(sel => {
-    const current = sel.value;
-    sel.innerHTML = '<option value="">-- select or type below --</option>' + names.map(name=>`<option value="${name}">${name}</option>`).join('') + '<option value="__custom__">✏️ Type manually...</option>';
-    if(current && (names.includes(current) || current==='__custom__')) sel.value = current;
-  });
-  // Also update any open picker category selects
-  document.querySelectorAll('.tpl-picker-select').forEach(sel => {
-    const cats = new Set(['all']);
-    getAllExerciseInfos().forEach(ex => { if(ex.cat) cats.add(ex.cat); });
-    const cur = sel.value;
-    sel.innerHTML = '<option value="all">All groups</option>' + [...cats].filter(c=>c!=='all').sort().map(c=>`<option value="${c}">${c}</option>`).join('');
-    if(cur) sel.value = cur;
-  });
-}
 
-function buildExOptions(selected='') {
-  const all = getFilteredExerciseNames();
-  return all.map(e=>`<option value="${e}"${e===selected?' selected':''}>${e}</option>`).join('');
-}
+
+
+
 
 function showTplPicker(id) {
   const panel = document.getElementById(`tplPicker${id}`);
@@ -2605,12 +2583,7 @@ function getFocusedSetRole(ex, si) {
   return `Backoff ${si - topIdx}`;
 }
 
-function getRpeDisplayValue(rpe) {
-  if(rpe === 'easy') return '6';
-  if(rpe === 'medium') return '8';
-  if(rpe === 'hard') return '9';
-  return rpe || '';
-}
+
 
 function focusedSetE1RM(set) {
   const w = parseFloat(set && set.weight);
@@ -3080,7 +3053,7 @@ function renderFocusedActiveSession() {
         <div class="focus-timer-pr-row">
           <button class="focus-rest-btn" onclick="clickFeedback(); toggleRestTimer()" type="button">
             <span class="focus-metric-label">Rest Timer</span>
-            <div class="focus-metric-value rest-timer-display${rt.running?' running':''}" id="restTimerDisplay">${rtDisplay}</div>
+            <div class="focus-metric-value rest-timer-display${rt.running?' running':''}" id="restTimerDisplay" onclick="event.stopPropagation(); clickFeedback(); openRestTimerModal()" style="cursor:pointer;">${rtDisplay}</div>
           </button>
           ${ex.histPR ? `<div class="focus-pr-card">
             <span class="focus-metric-label">Best PR</span>
@@ -3526,7 +3499,7 @@ function moveSessEx(ei, dir) {
 
 function formatTimer(s){const m=Math.floor(Math.max(0,s)/60);return `${m}:${(Math.max(0,s)%60).toString().padStart(2,'0')}`;}
 function ensureRestTimer(){
-  if(!window._restTimer) window._restTimer = {running:false, remaining:0, default:180, interval:null, doneTimeout:null};
+  if(!window._restTimer){const saved=LS.get('restTimerDefault');const def=saved&&saved>=10&&saved<=600?saved:180;window._restTimer={running:false,remaining:def,default:def,interval:null,doneTimeout:null};}
   return window._restTimer;
 }
 function ensureFloatingRestTimer(){
@@ -3599,7 +3572,7 @@ function toggleRestTimer(){
   if(rt.running) stopRestTimer();
   else startRestTimer();
 }
-function setRestTimerDefault(val){const v=parseInt(val);if(v>=10&&v<=600){const rt=ensureRestTimer();rt.default=v;if(!rt.running){rt.remaining=v;updateRestTimerUI();}}}
+function setRestTimerDefault(val){const v=parseInt(val);if(v>=10&&v<=600){const rt=ensureRestTimer();rt.default=v;LS.set('restTimerDefault',v);if(!rt.running){rt.remaining=v;updateRestTimerUI();}}}
 function playRestBeeps(){
   try{const ctx=getSharedAudioContext();if(!ctx)return;[0,0.4,0.8].forEach(offset=>{const osc=ctx.createOscillator(),gain=ctx.createGain();osc.connect(gain);gain.connect(ctx.destination);osc.frequency.setValueAtTime(880,ctx.currentTime+offset);gain.gain.setValueAtTime(0.4,ctx.currentTime+offset);gain.gain.exponentialRampToValueAtTime(0.01,ctx.currentTime+offset+0.25);osc.start(ctx.currentTime+offset);osc.stop(ctx.currentTime+offset+0.25);});if(navigator.vibrate)navigator.vibrate([100,100,100,100,200]);}catch(e){}
 }
@@ -4448,11 +4421,7 @@ function getAdjustedProgWeek(rawPw) {
   return adjusted;
 }
 
-function getMaxWeight(exercises) {
-  let max = 0;
-  exercises.forEach(ex => ex.sets.forEach(s => { const w = parseFloat(s.weight)||0; if(w>max) max=w; }));
-  return max || null;
-}
+
 
 function getBestSetForExercise(exName, sessions) {
   let best = null;
@@ -4486,24 +4455,7 @@ function getBestRepsForWeight(exName, weight, sessions) {
   return bestReps > 0 ? bestReps : null;
 }
 
-function getPRs(sessions) {
-  const prs = {Squat:null, 'Bench Press':null, Deadlift:null};
-  sessions.forEach(s => {
-    for(const [lift, getter] of Object.entries(SBD_KEYS)) {
-      getter(s).forEach(ex => {
-        ex.sets.forEach(st => {
-          const w = parseFloat(st.weight) || 0;
-          const r = parseInt(st.reps) || 0;
-          if(w > 0 && r > 0) {
-            if(!prs[lift] || w > prs[lift].w || (w === prs[lift].w && r > prs[lift].r))
-              prs[lift] = {w, r, date: s.date};
-          }
-        });
-      });
-    }
-  });
-  return prs;
-}
+
 
 function getTopSetForLift(liftKey, sessions) {
   const getter = SBD_KEYS[liftKey];
@@ -4798,7 +4750,7 @@ function resetData() {
     inp.style.borderColor = '#cc4444';
     return;
   }
-  const resetKeys = ['mx_1rm','mx_tpl','mx_sess','mx_ex','mx_goals','mx_goals_v2','mx_active_sess','mx_draft_sess'];
+  const resetKeys = ['mx_1rm','mx_tpl','mx_sess','mx_ex','mx_goals','mx_goals_v2','mx_active_sess','mx_draft_sess','mx_plates','mx_blocks','mx_active_block','mx_backup_folder'];
   resetKeys.forEach(k => { localStorage.removeItem(k); IDB.set(k, null); });
   closeModal('mSettings');
   inp.value = '';
@@ -4985,24 +4937,7 @@ function saveGoalTotal() {
   renderDash();
 }
 
-function getTopSetForLift(liftKey, sessions) {
-  // Returns best top set (highest weight, tiebreak reps) across all sessions for a SBD lift
-  const getter = SBD_KEYS[liftKey];
-  if(!getter) return null;
-  let best = null;
-  sessions.forEach(s => {
-    getter(s).forEach(ex => {
-      ex.sets.forEach(st => {
-        const w = parseFloat(st.weight)||0;
-        const r = parseInt(st.reps)||0;
-        if(w > 0 && r > 0) {
-          if(!best || w > best.w || (w === best.w && r > best.r)) best = {w, r};
-        }
-      });
-    });
-  });
-  return best;
-}
+
 
 // ── CELEBRATION MODAL ───────────────────────────────────────
 function formatTime(timestamp) {
