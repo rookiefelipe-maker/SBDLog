@@ -2561,6 +2561,32 @@ function findNextPendingSet(fromEi, fromSi) {
   return findFirstPendingOverall();
 }
 
+// Biseries/Superset helpers
+function isBiseriePrimary(ei) {
+  if(!activeSession || !activeSession.exercises[ei]) return false;
+  return activeSession.exercises[ei].superset !== null && activeSession.exercises[ei].superset !== undefined;
+}
+
+function getBiseriePartnerIndex(ei) {
+  if(!activeSession || !activeSession.exercises[ei]) return null;
+  const ex = activeSession.exercises[ei];
+  return (ex.superset !== null && ex.superset !== undefined) ? ex.superset : null;
+}
+
+function isPairedExerciseComplete(ei) {
+  if(!activeSession) return true;
+  const partnerEi = getBiseriePartnerIndex(ei);
+  if(partnerEi === null) return true; // Not a paired exercise
+  const partnerEx = activeSession.exercises[partnerEi];
+  if(!partnerEx || !partnerEx.sets) return true;
+  return partnerEx.sets.every(s => isSetDone(s));
+}
+
+function getCurrentSetIndex(ei) {
+  if(!activeSession || !activeSession.exercises[ei]) return 0;
+  return firstPendingSetIndex(activeSession.exercises[ei]);
+}
+
 function getTopSetIndex(ex) {
   const sets = ex && ex.sets ? ex.sets : [];
   let bestIdx = 0;
@@ -2715,12 +2741,24 @@ function completeFocusedSet() {
   }
   const wasDone = isSetDone(set);
   set.done = true;
-  set.restTimerStarted = true;
   saveActiveSession();
 
   // Show RPE popup as floating overlay
   if(!wasDone) {
-    startRestTimer();
+    // Check if this exercise is part of a biseries
+    const ei = runner.exerciseIndex;
+    const partnerEi = getBiseriePartnerIndex(ei);
+    
+    // Determine if PRIMARY or SECONDARY
+    const isSECONDARY = partnerEi !== null && ei > partnerEi;
+    
+    if(isSECONDARY || partnerEi === null) {
+      // SECONDARY or non-paired → Timer activates
+      set.restTimerStarted = true;
+      startRestTimer();
+    }
+    // PRIMARY → No timer (will activate after SECONDARY completes)
+    
     showRpePopup(runner.exerciseIndex, runner.setIndex);
     return;
   }
@@ -2734,12 +2772,22 @@ function completeFocusedSet() {
 }
 
 function showRpePopup(ei, si) {
+  const partnerEi = getBiseriePartnerIndex(ei);
+  let rpeLabel = 'How hard was that set?';
+  
+  if(partnerEi !== null) {
+    const isPrimary = ei < partnerEi;
+    if(isPrimary) {
+      rpeLabel = 'How hard was that set? (Next: paired exercise)';
+    }
+  }
+  
   const overlay = document.createElement('div');
   overlay.className = 'rpe-overlay';
   overlay.id = 'rpeOverlay';
   overlay.innerHTML = `
     <div class="rpe-sheet">
-      <div class="rpe-popup-label">How hard was that set?</div>
+      <div class="rpe-popup-label">${rpeLabel}</div>
       <div class="rpe-popup-btns">
         <button class="rpe-popup-btn rpe-easy-btn" onclick="clickFeedback(); confirmRpeAndAdvance('easy',${ei},${si})">
           <span class="rpe-emoji">🟢</span>Easy
@@ -2763,7 +2811,28 @@ function confirmRpeAndAdvance(rpeValue, ei, si) {
   if(!activeSession) return;
   const set = activeSession.exercises[ei] && activeSession.exercises[ei].sets[si];
   if(set && rpeValue) set.rpe = rpeValue;
-  const next = findNextPendingSet(ei, si);
+  
+  // Check if this exercise is part of a biseries pair
+  const partnerEi = getBiseriePartnerIndex(ei);
+  let next = null;
+  
+  if(partnerEi !== null) {
+    // Part of a biseries - determine if PRIMARY or SECONDARY
+    // PRIMARY = lower index, SECONDARY = higher index
+    const isPrimary = ei < partnerEi;
+    
+    if(isPrimary) {
+      // PRIMARY exercise completed → Jump to SECONDARY at SAME set
+      next = {exerciseIndex: partnerEi, setIndex: si};
+    } else {
+      // SECONDARY exercise completed → Jump to next set of PRIMARY
+      next = {exerciseIndex: partnerEi, setIndex: si + 1};
+    }
+  } else {
+    // Not part of a biseries, use normal flow
+    next = findNextPendingSet(ei, si);
+  }
+  
   if(next) activeSession.runner = next;
   saveActiveSession();
   renderActiveSession();
@@ -2804,6 +2873,10 @@ function showAddOptionsPopup(ei) {
         <button onclick="clickFeedback(); document.getElementById('addOptionsPopup').remove(); showAddExerciseToSessionPopup();"
           style="background:var(--bg3);border:1.5px solid var(--bg4);border-radius:14px;color:var(--white);font-family:'DM Sans',sans-serif;font-size:16px;font-weight:600;padding:16px;cursor:pointer;width:100%;transition:background .15s;">
           Exercise
+        </button>
+        <button onclick="clickFeedback(); document.getElementById('addOptionsPopup').remove(); startBiserieSelectionFromFocus(${ei});"
+          style="background:var(--bg3);border:1.5px solid var(--bg4);border-radius:14px;color:var(--white);font-family:'DM Sans',sans-serif;font-size:16px;font-weight:600;padding:16px;cursor:pointer;width:100%;transition:background .15s;">
+          Biserie
         </button>
       </div>
       <button onclick="clickFeedback(); document.getElementById('addOptionsPopup').remove();"
@@ -3052,8 +3125,8 @@ function renderFocusedActiveSession() {
 
         <div class="focus-timer-pr-row">
           <button class="focus-rest-btn" onclick="clickFeedback(); toggleRestTimer()" type="button">
-            <span class="focus-metric-label">Rest Timer</span>
-            <div class="focus-metric-value rest-timer-display${rt.running?' running':''}" id="restTimerDisplay" onclick="event.stopPropagation(); clickFeedback(); openRestTimerModal()" style="cursor:pointer;">${rtDisplay}</div>
+            <span class="focus-metric-label">Rest Timer${getBiseriePartnerIndex(ei) !== null && ei < getBiseriePartnerIndex(ei) ? ' (after paired)' : ''}</span>
+            <div class="focus-metric-value rest-timer-display${rt.running?' running':''}" id="restTimerDisplay" onclick="event.stopPropagation(); clickFeedback(); onRestTimerDisplayClick()" style="cursor:pointer;">${rtDisplay}</div>
           </button>
           ${ex.histPR ? `<div class="focus-pr-card">
             <span class="focus-metric-label">Best PR</span>
@@ -3099,7 +3172,7 @@ function renderActiveSession() {
       </div>
       <div style="display:flex;gap:8px;align-items:center;">
         <div class="rest-timer-bar" style="margin-bottom:0;padding:8px 10px;gap:6px;">
-          <div class="rest-timer-display${rt.running?' running':''}" id="restTimerDisplay" style="cursor:pointer;" onclick="clickFeedback(); openRestTimerModal()">${rtDisplay}</div>
+          <div class="rest-timer-display${rt.running?' running':''}" id="restTimerDisplay" style="cursor:pointer;" onclick="clickFeedback(); onRestTimerDisplayClick()">${rtDisplay}</div>
           <button class="rest-timer-btn" onclick="clickFeedback(); toggleRestTimer()" id="restTimerBtn">${rt.running?'Stop':'Rest'}</button>
         </div>
         <button class="btn btn-sm" onclick="clickFeedback(); finishSession()" style="width:auto;">Finish</button>
@@ -3149,7 +3222,7 @@ function renderActiveSession() {
   activeSession.exercises.forEach((ex, ei) => {
     if(renderedEis.has(ei)) return;
     // Check if this exercise is paired with another
-    const pairEi = (ex.superset !== null && ex.superset !== undefined) ? ex.superset : null;
+    const pairEi = getBiseriePartnerIndex(ei);
     if(pairEi !== null && pairEi < activeSession.exercises.length) {
       const pairEx = activeSession.exercises[pairEi];
       // Render both inside a superset-block wrapper
@@ -3509,7 +3582,7 @@ function ensureFloatingRestTimer(){
     el.id='floatingRestTimer';
     el.className='floating-rest-timer';
     el.innerHTML='<div class="floating-rest-timer-time" id="floatingRestTimerTime">3:00</div><div class="floating-rest-timer-label" id="floatingRestTimerLabel">Rest</div>';
-    el.addEventListener('click',()=>{clickFeedback(); openRestTimerModal();});
+    el.addEventListener('click',()=>{clickFeedback(); onRestTimerDisplayClick();});
     document.body.appendChild(el);
   }
   return el;
@@ -3572,6 +3645,18 @@ function toggleRestTimer(){
   if(rt.running) stopRestTimer();
   else startRestTimer();
 }
+
+function onRestTimerDisplayClick() {
+  const rt = ensureRestTimer();
+  if(rt.running) {
+    // Timer is running - pause it
+    stopRestTimer();
+  } else {
+    // Timer is stopped - open editor modal
+    openRestTimerModal();
+  }
+}
+
 function setRestTimerDefault(val){const v=parseInt(val);if(v>=10&&v<=600){const rt=ensureRestTimer();rt.default=v;LS.set('restTimerDefault',v);if(!rt.running){rt.remaining=v;updateRestTimerUI();}}}
 function playRestBeeps(){
   try{const ctx=getSharedAudioContext();if(!ctx)return;[0,0.4,0.8].forEach(offset=>{const osc=ctx.createOscillator(),gain=ctx.createGain();osc.connect(gain);gain.connect(ctx.destination);osc.frequency.setValueAtTime(880,ctx.currentTime+offset);gain.gain.setValueAtTime(0.4,ctx.currentTime+offset);gain.gain.exponentialRampToValueAtTime(0.01,ctx.currentTime+offset+0.25);osc.start(ctx.currentTime+offset);osc.stop(ctx.currentTime+offset+0.25);});if(navigator.vibrate)navigator.vibrate([100,100,100,100,200]);}catch(e){}
@@ -3732,6 +3817,11 @@ function collectSessionFromDOM() {
 
 function finishSession() {
   if(!activeSession) return;
+  
+  // Stop the timer if it's running
+  const rt = ensureRestTimer();
+  if(rt.running) stopRestTimer();
+  
   collectSessionFromDOM();
   const usesCompletionState = activeSession.exercises.some(ex => (ex.sets || []).some(s => s.done !== undefined));
   activeSession.exercises.forEach(ex => {
@@ -3851,13 +3941,76 @@ function addExManualToSession() {
 // Close modal but keep session alive in LS (used by ← Back button)
 function dismissSession() {
   collectSessionFromDOM();
+  // Stop the timer when dismissing
+  const rt = ensureRestTimer();
+  if(rt.running) stopRestTimer();
+  
   closeModal('mSess');
   // Re-render the picker so the resume banner is visible
   setTimeout(() => renderTrain(), 300);
 }
 
+function startBiserieSelectionFromFocus(ei) {
+  if(!activeSession || !activeSession.exercises[ei]) return;
+  
+  const targetEx = activeSession.exercises[ei];
+  // Get all other exercises as options for pairing
+  const optionsHtml = activeSession.exercises
+    .map((ex, i) => i !== ei ? `<button class="btn btn-ghost" style="width:100%;margin:6px 0;" onclick="clickFeedback(); setBiserieFromFocus(${ei},${i})">${htmlSafe(ex.name)}</button>` : null)
+    .filter(o => o !== null)
+    .join('');
+  
+  if(!optionsHtml) {
+    alert('No other exercises available for biserie');
+    return;
+  }
+  
+  // Create overlay with backdrop
+  const overlay = document.createElement('div');
+  overlay.id = 'biserieSelectionOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);animation:fadeIn 0.15s ease-out;';
+  overlay.innerHTML = `
+    <div style="background:var(--bg2);border:1px solid var(--bg3);border-radius:20px;padding:24px 20px 20px;width:100%;max-width:340px;box-shadow:0 24px 60px rgba(0,0,0,0.6);animation:slideUp 0.2s cubic-bezier(0.34,1.56,0.64,1);">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;color:var(--white);margin-bottom:16px;text-align:center;">Pair with:</div>
+      <div style="max-height:280px;overflow-y:auto;margin-bottom:16px;">
+        ${optionsHtml}
+      </div>
+      <button class="btn btn-ghost" style="width:100%;" onclick="clickFeedback(); document.getElementById('biserieSelectionOverlay').remove();">Cancel</button>
+    </div>`;
+  overlay.addEventListener('click', e => { if(e.target === overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+}
+
+function setBiserieFromFocus(ei1, ei2) {
+  if(!activeSession || !activeSession.exercises[ei1] || !activeSession.exercises[ei2]) return;
+  
+  // Remove the overlay specifically
+  const overlay = document.getElementById('biserieSelectionOverlay');
+  if(overlay) overlay.remove();
+  
+  // Collect any pending changes
+  collectFocusedSetFromDOM(false);
+  
+  const ex1 = activeSession.exercises[ei1];
+  const ex2 = activeSession.exercises[ei2];
+  
+  // Set the pairing (bidirectional)
+  ex1.superset = ei2;
+  ex1.supersetName = ex2.name;
+  ex2.superset = ei1;
+  ex2.supersetName = ex1.name;
+  
+  // Save and re-render
+  saveActiveSession();
+  renderActiveSession();
+}
+
 // True abandon: clears both memory and LS
 function cancelSession() {
+  // Stop the timer if it's running
+  const rt = ensureRestTimer();
+  if(rt.running) stopRestTimer();
+  
   clearActiveSession();
   activeSession = null;
   closeModal('mSess');
