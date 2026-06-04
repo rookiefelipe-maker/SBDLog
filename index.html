@@ -37,7 +37,7 @@ html,body{height:100%;background:var(--bg0);color:var(--text1);font-family:'DM S
 .tabs{display:flex;padding:0 20px;background:transparent;flex-shrink:0;border-bottom:1px solid rgba(255,255,255,.06);gap:0;backdrop-filter:blur(10px);}
 .tab{flex:1;padding:11px 4px;background:none;border:none;border-bottom:2px solid transparent;color:var(--text3);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;letter-spacing:1px;text-transform:uppercase;cursor:pointer;transition:all .15s;margin-bottom:-1px;}
 .tab.active{color:var(--white);border-bottom-color:var(--white);}
-.scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:18px 18px 80px;display:flex;flex-direction:column;gap:12px;}
+.scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:18px 18px 80px;display:flex;flex-direction:column;gap:28px;}
 .view{display:none;}.view.active{display:flex;flex-direction:column;gap:12px;}
 .slabel{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:var(--text3);margin-bottom:-4px;}
 .card{background:var(--bg2);border-radius:var(--r);border:1px solid var(--bg3);}
@@ -116,22 +116,75 @@ html,body{height:100%;background:var(--bg0);color:var(--text1);font-family:'DM S
 .sdel{background:none;border:none;color:var(--text3);font-size:16px;cursor:pointer;padding:2px;line-height:1;}
 .sdel:active{color:var(--text2);}
 /* HISTORY */
-.hist-card{background:var(--bg2);border-radius:var(--r);border:1px solid var(--bg3);overflow:hidden;}
-.hist-hdr{padding:13px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;user-select:none;}
-.hist-tag{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:1px;color:var(--white);}
-.hist-date{font-size:13px;color:var(--text3);}
-.hist-right{display:flex;align-items:center;gap:10px;}
-.hist-sum{font-size:13px;color:var(--text3);}
-.hchev{color:var(--text3);font-size:12px;transition:transform .2s;}
-.hist-card.open .hchev{transform:rotate(180deg);}
-.hist-body{display:none;padding:0 16px 14px;}
-.hist-card.open .hist-body{display:block;}
-.hex{margin-bottom:12px;}
-.hex-name{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:6px;}
-.htbl{width:100%;border-collapse:collapse;}
-.htbl th{font-size:11px;color:var(--text3);text-align:left;padding-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;}
-.htbl td{font-size:15px;color:var(--text2);padding:2px 0;font-variant-numeric:tabular-nums;}
-.htbl td.e1{font-size:13px;color:var(--text3);}
+.hist-card{background:var(--bg2);border-radius:var(--r);border:1px solid var(--bg3);overflow:hidden;cursor:pointer;transition:all .15s;margin-bottom:16px;}
+.hist-card:active{background:var(--bg3);}
+.hist-hdr{padding:16px 18px;display:flex;justify-content:space-between;align-items:center;gap:12px;}
+.hist-hdr-left{min-width:0;flex:1;}
+.hist-tag{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:1px;color:var(--white);line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.hist-meta-row{display:flex;align-items:center;gap:8px;margin-top:5px;flex-wrap:wrap;}
+.hist-date{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text3);}
+.hist-dot{width:3px;height:3px;border-radius:50%;background:var(--text3);opacity:.5;flex-shrink:0;}
+.hist-time{font-size:11px;color:var(--text3);}
+.hist-hdr-right{display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.hist-chips{display:flex;gap:5px;align-items:center;}
+.hist-chip{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.10);border-radius:8px;padding:5px 9px;font-size:11px;font-weight:700;color:var(--text2);letter-spacing:.3px;white-space:nowrap;}
+.hist-chip-sets{color:var(--text2);}
+.hist-chip-exs{color:var(--text3);}
+.hchev{display:none;}
+.hist-body{display:none;}
+.hist-divider{height:1px;background:rgba(255,255,255,.06);margin-bottom:14px;}
+.hist-ex-list{display:flex;flex-direction:column;gap:8px;margin-bottom:14px;}
+.hex{background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);border-radius:12px;overflow:hidden;}
+.hex-header{display:flex;align-items:center;justify-content:space-between;padding:9px 12px 8px;}
+.hex-name{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;color:rgba(255,255,255,.55);}
+.hex-top-set{font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--white);letter-spacing:.5px;line-height:1;}
+.hex-set-pills{display:flex;flex-wrap:wrap;gap:5px;padding:0 12px 10px;}
+.hex-set-pill{display:flex;align-items:center;gap:5px;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.09);border-radius:8px;padding:5px 9px;font-size:13px;font-weight:600;color:var(--text2);font-variant-numeric:tabular-nums;}
+.hex-set-num{font-size:10px;font-weight:800;color:var(--text3);letter-spacing:.5px;min-width:12px;}
+.hex-set-rpe{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.hex-set-rpe.easy{background:#5a9a5a;}
+.hex-set-rpe.medium{background:#c89000;}
+.hex-set-rpe.hard{background:#cc3333;}
+.hist-actions{display:flex;gap:8px;margin-top:6px;}
+/* Legacy table — hidden, replaced by pills */
+.htbl{display:none;}
+/* HISTORY DETAIL MODAL */
+.hist-detail-header{display:flex;align-items:center;margin-bottom:20px;gap:12px;}
+.hist-detail-back{background:var(--bg3);border:none;border-radius:var(--rs);width:40px;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text2);font-size:20px;transition:background .15s;}
+.hist-detail-back:active{background:var(--bg4);}
+.hist-detail-title{flex:1;}
+.hist-detail-title-main{font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:1px;color:var(--white);line-height:1;}
+.hist-detail-title-meta{font-size:12px;color:var(--text3);margin-top:6px;}
+.hist-detail-section{margin-bottom:20px;}
+.hist-detail-section-title{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:var(--text3);margin-bottom:10px;}
+.hist-detail-exercises{display:flex;flex-direction:column;gap:10px;}
+.hist-detail-exercise-card{background:var(--bg3);border:1px solid var(--bg4);border-radius:12px;padding:14px;}
+.hist-detail-ex-name{font-size:14px;font-weight:600;color:var(--text1);margin-bottom:8px;}
+.hist-detail-ex-sets{display:flex;flex-direction:column;gap:6px;}
+.hist-detail-set-row{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text2);}
+.hist-detail-set-num{font-weight:600;color:var(--text3);min-width:20px;}
+.hist-detail-set-info{flex:1;}
+.hist-detail-set-rpe{width:6px;height:6px;border-radius:50%;}
+.hist-detail-modal-actions{display:flex;gap:10px;margin-top:24px;padding-top:18px;border-top:1px solid var(--bg3);}
+/* HISTORY DETAIL - FOCUS-LIKE */
+.hist-detail-ex-pills{display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;margin-bottom:16px;-webkit-overflow-scrolling:touch;}
+.hist-detail-ex-pill{background:var(--bg3);border:1px solid var(--bg4);border-radius:10px;padding:10px 14px;font-size:13px;font-weight:600;color:var(--text2);cursor:pointer;white-space:nowrap;transition:all .15s;flex-shrink:0;}
+.hist-detail-ex-pill:active{transform:scale(.95);}
+.hist-detail-ex-pill.active{background:var(--white);color:var(--bg0);border-color:var(--white);}
+.hist-detail-set-selector{display:flex;gap:8px;margin-bottom:16px;padding:12px;background:var(--bg3);border-radius:10px;align-items:center;}
+.hist-detail-set-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--text3);min-width:fit-content;}
+.hist-detail-set-pills{display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;flex:1;}
+.hist-detail-set-pill{background:var(--bg2);border:1px solid var(--bg4);border-radius:8px;padding:8px 12px;font-size:12px;font-weight:600;color:var(--text2);cursor:pointer;white-space:nowrap;transition:all .15s;flex-shrink:0;}
+.hist-detail-set-pill:active{transform:scale(.92);}
+.hist-detail-set-pill.active{background:var(--white);color:var(--bg0);border-color:var(--white);}
+.hist-detail-display{background:var(--bg2);border-radius:12px;border:1px solid var(--bg3);padding:18px;margin-bottom:16px;}
+.hist-detail-display-ex-name{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:1px;color:var(--white);line-height:1;margin-bottom:14px;}
+.hist-detail-display-set-info{display:flex;flex-direction:column;gap:10px;}
+.hist-detail-info-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--bg3);}
+.hist-detail-info-row:last-child{border-bottom:none;}
+.hist-detail-info-label{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--text3);min-width:60px;}
+.hist-detail-info-value{font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--white);line-height:1;}
+.hist-detail-plate-viz{margin-top:12px;padding-top:12px;border-top:1px solid var(--bg3);}
 /* STATS */
 .scard{background:var(--bg2);border-radius:var(--r);border:1px solid var(--bg3);padding:18px;}
 .stitle{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:var(--text3);margin-bottom:14px;}
@@ -1446,6 +1499,14 @@ if ('serviceWorker' in navigator) {
       <button class="btn btn-ghost btn-sm" style="flex:1" onclick="clickFeedback(); closeModal('mFillManualSess')">Cancel</button>
       <button class="btn btn-sm" style="flex:2" onclick="clickFeedback(); saveManualSess()">Save session</button>
     </div>
+  </div>
+</div>
+
+<!-- MODAL: History session detail view -->
+<div class="moverlay" id="mHistDetail">
+  <div class="modal" style="max-height:88vh;overflow-y:auto;">
+    <div class="mhandle"></div>
+    <div id="histDetailContent"></div>
   </div>
 </div>
 
@@ -4095,33 +4156,26 @@ function renderHist() {
   }
   [...sessions].sort((a,b)=>b.date.localeCompare(a.date)).forEach(s => {
     const totalSets = s.exercises.reduce((a,e)=>a+e.sets.length,0);
+    const totalExs = s.exercises.length;
     const card = document.createElement('div');
     card.className = 'hist-card';
-    // Format times if available
-    const timeStr = s.startTime && s.endTime ? ` • ${formatTime(s.startTime)} - ${formatTime(s.endTime)}` : '';
+    card.onclick = () => { clickFeedback(); openHistDetail(s.id); };
+    const timeStr = s.startTime && s.endTime ? `<span class="hist-dot"></span><span class="hist-time">${formatTime(s.startTime)} – ${formatTime(s.endTime)}</span>` : '';
+    const manualBadge = s.manual ? `<span style="font-size:10px;font-family:'DM Sans',sans-serif;font-weight:800;letter-spacing:1.2px;color:#3a7bd5;background:rgba(58,123,213,0.12);border:1px solid rgba(58,123,213,0.28);border-radius:6px;padding:2px 7px;text-transform:uppercase;vertical-align:middle;margin-left:7px;">Manual</span>` : '';
     card.innerHTML = `
-      <div class="hist-hdr" onclick="clickFeedback(); this.closest('.hist-card').classList.toggle('open')">
-        <div>
-          <div class="hist-tag">${s.tplName||'Session'}${s.manual ? ' <span style="font-size:11px;font-family:\'DM Sans\',sans-serif;font-weight:700;letter-spacing:1px;color:#3a7bd5;background:rgba(58,123,213,0.12);border:1px solid rgba(58,123,213,0.3);border-radius:5px;padding:2px 6px;vertical-align:middle;">MANUAL</span>' : ''}</div>
-          <div class="hist-date">${fmtDate(s.date)}${timeStr}</div>
+      <div class="hist-hdr">
+        <div class="hist-hdr-left">
+          <div class="hist-tag">${s.tplName||'Session'}${manualBadge}</div>
+          <div class="hist-meta-row">
+            <span class="hist-date">${fmtDate(s.date)}</span>
+            ${timeStr}
+          </div>
         </div>
-        <div class="hist-right">
-          <div class="hist-sum">${totalSets} sets</div>
-          <div class="hchev">▼</div>
-        </div>
-      </div>
-      <div class="hist-body">
-        ${s.exercises.map(ex=>`
-          <div class="hex">
-            <div class="hex-name">${ex.name}</div>
-            <table class="htbl">
-              <tr><th>Set</th><th>Weight</th><th>Reps</th>${ex.topSet?'<th>e1RM</th>':''}<th>RPE</th></tr>
-              ${ex.sets.map((st,i)=>{const rpeEmoji=st.rpe==='easy'?'🟢':st.rpe==='medium'?'🟡':st.rpe==='hard'?'🔴':'';return `<tr><td>${i+1}</td><td>${st.weight} kg</td><td>${st.reps}</td>${ex.topSet?`<td class="e1">${e1rm(parseFloat(st.weight),parseInt(st.reps))} kg</td>`:''}<td>${rpeEmoji}</td></tr>`;}).join('')}
-            </table>
-          </div>`).join('')}
-        <div style="display:flex;gap:8px;margin-top:10px;">
-          <button class="btn btn-ghost btn-sm" style="flex:1;" onclick="clickFeedback(); openEditSess('${s.id}')">Edit session</button>
-          <button class="btn-danger" onclick="clickFeedback(); deleteSess('${s.id}')">Delete</button>
+        <div class="hist-hdr-right">
+          <div class="hist-chips">
+            <div class="hist-chip hist-chip-exs">${totalExs} ex</div>
+            <div class="hist-chip hist-chip-sets">${totalSets} sets</div>
+          </div>
         </div>
       </div>`;
     list.appendChild(card);
@@ -4138,6 +4192,146 @@ function deleteSess(id) {
 }
 
 let editingSessId = null;
+let viewingHistDetailId = null;
+
+function renderHistPlatePreview(weight, exName) {
+  if(!weight || parseFloat(weight) <= 0) return '';
+  const machine = isMachineExercise(exName);
+  const cable = isCableExercise(exName);
+  
+  if(cable) {
+    const kg = parseFloat(weight);
+    const { plates } = getCablePlates(kg);
+    const platesHtml = plates.map((p) => {
+      return `<div class="cable-vplate${p.isPin ? ' cable-pin-plate' : ''}" title="${p.w} kg">
+        <span class="cable-vplate-label">${p.w}kg</span>
+      </div>`;
+    }).join('');
+    return `<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--text3);margin-bottom:8px;margin-top:8px;">Cable Stack</div>
+      <div class="cable-vstack" style="margin:0;">
+        ${platesHtml}
+      </div>`;
+  }
+  
+  const enabled = shouldShowPlateVisualizer(exName) || machine;
+  if(!enabled) return '';
+  
+  const calc = getPlatesForWeight(weight, machine);
+  if(!calc.plates.length || !calc.exact) return '';
+  
+  const title = machine ? 'Machine loader' : 'Bar loader';
+  const loadLabel = machine ? `${formatPlate(calc.side)} kg total` : `${formatPlate(calc.side)} kg / side`;
+  
+  return `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;margin-top:8px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--text3);">
+      <span>${title}</span>
+      <span>${loadLabel}</span>
+    </div>
+    <div class="plate-bar" style="height:30px;gap:2px;">
+      <div class="plate-sleeve" style="width:20px;height:4px;"></div>
+      <div class="plate-collar" style="width:3px;height:8px;margin-right:3px;"></div>
+      <div class="plate-stack" style="gap:1px;">${renderPlateStackHtml(calc.plates)}</div>
+    </div>`;
+}
+
+function openHistDetail(sessionId) {
+  const {sessions} = getData();
+  const s = sessions.find(x => x.id === sessionId);
+  if(!s) return;
+  viewingHistDetailId = sessionId;
+  const modal = document.getElementById('mHistDetail');
+  const detailContent = modal.querySelector('#histDetailContent');
+  
+  let selectedExIdx = 0;
+  let selectedSetIdx = 0;
+  
+  const renderDetailView = () => {
+    const ex = s.exercises[selectedExIdx];
+    if(!ex) return;
+    
+    const set = ex.sets[selectedSetIdx];
+    if(!set) return;
+    
+    const rpeClass = set.rpe==='easy'?'easy':set.rpe==='medium'?'medium':set.rpe==='hard'?'hard':'';
+    const rpeEmoji = rpeClass==='easy'?'🟢':rpeClass==='medium'?'🟡':rpeClass==='hard'?'🔴':'—';
+    const plateViz = renderHistPlatePreview(set.weight, ex.name);
+    
+    // Exercise pills
+    const exPills = s.exercises.map((e, i) => `
+      <div class="hist-detail-ex-pill ${i === selectedExIdx ? 'active' : ''}" onclick="clickFeedback(); window.histDetailSelectEx(${i})">${e.name}</div>
+    `).join('');
+    
+    // Set pills
+    const setPills = ex.sets.map((st, i) => `
+      <div class="hist-detail-set-pill ${i === selectedSetIdx ? 'active' : ''}" onclick="clickFeedback(); window.histDetailSelectSet(${i})">Set ${i+1}</div>
+    `).join('');
+    
+    const totalSets = s.exercises.reduce((a,e)=>a+e.sets.length,0);
+    const totalExs = s.exercises.length;
+    
+    detailContent.innerHTML = `
+      <div class="hist-detail-header">
+        <button class="hist-detail-back" onclick="clickFeedback(); closeHistDetail()">←</button>
+        <div class="hist-detail-title">
+          <div class="hist-detail-title-main">${s.tplName||'Session'}</div>
+          <div class="hist-detail-title-meta">${fmtDate(s.date)}</div>
+        </div>
+      </div>
+      
+      <div style="margin-bottom:14px;font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1.2px;font-weight:600;">${totalExs} Exercises • ${totalSets} Sets</div>
+      
+      <div class="hist-detail-ex-pills">${exPills}</div>
+      
+      <div class="hist-detail-set-selector">
+        <div class="hist-detail-set-label">Set</div>
+        <div class="hist-detail-set-pills">${setPills}</div>
+      </div>
+      
+      <div class="hist-detail-display">
+        <div class="hist-detail-display-ex-name">${ex.name}</div>
+        <div class="hist-detail-display-set-info">
+          <div class="hist-detail-info-row">
+            <div class="hist-detail-info-label">Weight</div>
+            <div class="hist-detail-info-value">${set.weight || '—'} kg</div>
+          </div>
+          <div class="hist-detail-info-row">
+            <div class="hist-detail-info-label">Reps</div>
+            <div class="hist-detail-info-value">${set.reps || '—'}</div>
+          </div>
+          <div class="hist-detail-info-row">
+            <div class="hist-detail-info-label">RPE</div>
+            <div style="flex:1;">${rpeEmoji} <span style="color:var(--text3);font-size:12px;font-weight:600;margin-left:6px;">${rpeClass.toUpperCase()}</span></div>
+          </div>
+          ${plateViz ? `<div class="hist-detail-plate-viz">${plateViz}</div>` : ''}
+        </div>
+      </div>
+      
+      <div class="hist-detail-modal-actions">
+        <button class="btn btn-ghost" style="flex:1;" onclick="clickFeedback(); closeHistDetail(); openEditSess('${s.id}')">Edit session</button>
+        <button class="btn-danger" onclick="clickFeedback(); if(confirm('Delete this session?')) { deleteSess('${s.id}'); closeHistDetail(); }">Delete</button>
+      </div>`;
+  };
+  
+  // Store these in window so onclick can access them
+  window.histDetailSelectEx = (idx) => {
+    selectedExIdx = idx;
+    selectedSetIdx = 0; // Reset to first set when changing exercise
+    renderDetailView();
+  };
+  
+  window.histDetailSelectSet = (idx) => {
+    selectedSetIdx = idx;
+    renderDetailView();
+  };
+  
+  renderDetailView();
+  modal.classList.add('open');
+}
+
+function closeHistDetail() {
+  const modal = document.getElementById('mHistDetail');
+  modal.classList.remove('open');
+  viewingHistDetailId = null;
+}
 
 function htmlSafe(v) {
   return String(v ?? '').replace(/[&<>'"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));
